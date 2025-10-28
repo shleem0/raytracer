@@ -1,0 +1,8 @@
+Blender exporter - storing camera, point light, sphere, cube and plane details in a JSON file
+
+Camera space transforms - C++ camera class with methods to: read the exported JSON file and store camera information, method to convert pixel coordinates to a ray (with Ray class) in world coordinates
+
+Image read and write - C++ image class with a constructor that takes a file name, methods to read and modify pixel  values of the image and a method that writes the image to a chosen file
+
+Ray intersection - implemented ray intersection checkers for each shape type, ensuring to transform the ray according to the shape's transformation and editing a hit structure object to include the intersection point and its distance along the ray.
+
