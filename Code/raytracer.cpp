@@ -23,7 +23,7 @@ int main(){
     vector<Cube> cubes = Cube::parseCubeDataFromJson();
     vector<Plane> planes = Plane::parsePlaneDataFromJson();
 
-    int totalObjects = cams.size() + spheres.size() + cubes.size() + planes.size();
+    int totalObjects = spheres.size() + cubes.size() + planes.size();
 
     bool intersect;
     Ray ray;
@@ -33,11 +33,11 @@ int main(){
 
 
     /*Accelerated ray caster*/    
-    // Build the BVH
+    //Build BVH
     BVHNode* bvh = BVHNode::buildBVH(planes, cubes, spheres);
 
     uint64_t start = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    // For every pixel
+    //For every pixel
     for (int x = 0; x < cams[0].res_x; x++) {
         for (int y = 0; y < cams[0].res_y; y++) {
             intersect = false;
@@ -45,6 +45,7 @@ int main(){
             ray = cams[0].convertPixelToRay(x, y);
             rays.push_back(ray);
 
+            //Traverse BVH
             float tMin = 0.0f;
             float tMax = FLT_MAX;
             if (bvh->intersect(ray, tMin, tMax)) {
@@ -56,9 +57,7 @@ int main(){
 
     cout << "Time taken for BVH RT (accelerated): " << (end - start) / 1000.0f << "s\n";
 
-    delete bvh;  // Don't forget to free the BVH memory!
-
-
+    delete bvh;
 
     //---Simple ray caster (unaccelerated)---
     start = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();

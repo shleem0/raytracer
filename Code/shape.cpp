@@ -9,7 +9,7 @@
 using namespace std;
 
 /*Helper functions for parsing JSON data*/
-// Function to get a float value from a JSON string
+//Function to get a float value from a JSON string
 float Shape::getFloat(const string& str, const string& key) {
     
     size_t pos = str.find(key);
@@ -22,7 +22,7 @@ float Shape::getFloat(const string& str, const string& key) {
         throw runtime_error("Invalid JSON string");
     }
 
-    start += 1; // Skip the colon
+    start += 1; //Skip the colon
     while (start < str.length() && isspace(str[start])) {
         start++;
     }
@@ -35,7 +35,7 @@ float Shape::getFloat(const string& str, const string& key) {
     return stof(str.substr(start, end - start));
 }
 
-// Function to get a JSON object value from a JSON string
+//Function to get a JSON object value from a JSON string
 string Shape::getJSONObject(const string& str, const string& key) {
     size_t pos = str.find(key);
     if (pos == string::npos) {
@@ -64,7 +64,7 @@ string Shape::getJSONObject(const string& str, const string& key) {
     return str.substr(start, end - start + 1);
 }
 
-
+//Function to get an array from a JSON string
 string Shape::getJSONArray(const string& str, const string& key) {
     size_t pos = str.find(key);
     if (pos == string::npos) {
@@ -88,5 +88,5 @@ string Shape::getJSONArray(const string& str, const string& key) {
         throw runtime_error("Mismatched brackets in JSON string");
     }
 
-    return str.substr(start, end - start); // includes outer [ ... ]
+    return str.substr(start, end - start);
 }

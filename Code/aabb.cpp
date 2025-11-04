@@ -9,6 +9,7 @@
 
 using namespace std;
 
+//Constructor
 AABB::AABB(vector<float> min_v, vector<float> max_v){
     min = min_v;
     max = max_v;
@@ -17,12 +18,15 @@ AABB::AABB(vector<float> min_v, vector<float> max_v){
 
 AABB::AABB(const AABB& other) : min(other.min), max(other.max) {}
 
+
+//Checks if a point is within the AABB
 bool AABB::contains(const vector<float> point) const {
     return (point[0] >= min[0] && point[0] <= max[0]) &&
            (point[1] >= min[1] && point[1] <= max[1]) &&
            (point[2] >= min[2] && point[2] <= max[2]);
 }
 
+//Checks if the given ray intersects with the AABB
 bool AABB::intersect(const Ray& ray, float& tMin, float& tMax) const {
     float tMinX, tMaxX, tMinY, tMaxY, tMinZ, tMaxZ;
 
@@ -57,6 +61,7 @@ bool AABB::intersect(const Ray& ray, float& tMin, float& tMax) const {
     return tMin <= tMax;
 }
 
+//Gets AABBs of each shape in the scene
 AABB AABB::fromPoints(const vector<Plane> planes, const vector<Cube> cubes, const vector<Sphere> spheres) {
     vector<float> minPoint = {numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max()};
     vector<float> maxPoint = {numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min()};
@@ -100,6 +105,8 @@ AABB AABB::fromPoints(const vector<Plane> planes, const vector<Cube> cubes, cons
     return AABB(minPoint, maxPoint);
 }
 
+
+//Get AABB from sent of points around a shape
 AABB AABB::fromPoints(const vector<vector<float>> points) {
     vector<float> minPoint = {numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max()};
     vector<float> maxPoint = {numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min()};
@@ -118,6 +125,8 @@ AABB AABB::fromPoints(const vector<vector<float>> points) {
     return AABB(minPoint, maxPoint);
 }
 
+
+//Get the union of two AABBs
 AABB AABB::unionOf(const AABB& a, const AABB& b) {
 
     vector<float> minPoint = {numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max()};

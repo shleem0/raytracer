@@ -4,5 +4,7 @@ Camera space transforms - C++ camera class with methods to: read the exported JS
 
 Image read and write - C++ image class with a constructor that takes a file name, methods to read and modify pixel  values of the image and a method that writes the image to a chosen file
 
-Ray intersection - implemented ray intersection checkers for each shape type, ensuring to transform the ray according to the shape's transformation and editing a hit structure object to include the intersection point and its distance along the ray.
+Ray intersection - implemented ray intersection checker for each shape type, ensuring to transform the ray according to the shape's transformation and editing a hit structure object to include the intersection point and its distance along the ray.
+
+Acceleration - implemented a bounding volume hierarchy structure using axis-aligned bounded boxes for each shape to speed up the ray-tracing processes
 

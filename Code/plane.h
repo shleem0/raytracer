@@ -10,18 +10,28 @@
 
 using namespace std;
 
+//Class to represent a plane in a Blender scene
 class Plane : public Shape{
     public:
         vector<vector<float>> vertices;
         float normal[3];
 
+        //Parse all plane data from the scene's JSON
         static vector<Plane> parsePlaneDataFromJson();
+
+        //Check if a ray intersects with the plane
         bool intersect(const Ray&, HitStructure&) override;
 
+        //Check if a 2D point is within the plane's bounds (as a 2D polygon)
         bool pointInsidePolygon(const vector<float>&);
+
+        //Calculate normal of the plane
         void calculateNormal();
+
+        //Sort the planes by angle around a centroid
         void sortVerticesWinding();
 
+        //Get AABB of plane
         AABB getAABB() const;
 };
 

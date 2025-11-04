@@ -15,28 +15,28 @@
 using namespace std;
 
 vector<Plane> Plane::parsePlaneDataFromJson() {
-    // Open JSON file
+    //Open JSON file
     ifstream jsonFile("..\\ASCII\\scene.json");
     if (!jsonFile) {
         cerr << "Error opening JSON file." << endl;
         return {};
     }
 
-    // Read entire file into string
+    //Read file into string
     stringstream buffer;
     buffer << jsonFile.rdbuf();
     string jsonStr = buffer.str();
 
-    // Get planes array as string (includes [ ... ])
+    //Get planes array as string
     string propertiesStr = getJSONObject(jsonStr, "\"properties\"");
     string planesArrayStr = getJSONArray(propertiesStr, "\"planes\"");
 
-    // Remove outer brackets
+    //Remove outer brackets
     if (planesArrayStr.front() == '[' && planesArrayStr.back() == ']') {
         planesArrayStr = planesArrayStr.substr(1, planesArrayStr.size() - 2);
     }
 
-    // Split array into full plane objects
+    //Split array into plane objects
     vector<string> planeObjects;
     int braces = 0;
     size_t start = 0;
@@ -63,10 +63,10 @@ vector<Plane> Plane::parsePlaneDataFromJson() {
 
         Plane newPlane;
 
-        // Extract the specific plane
+        //Extract the current plane
         string planeDataStr = planeObjects[i];
 
-        // Parse corners
+        //Parse corners
         string cornersStr = getJSONArray(planeDataStr, "\"corners\"");
         if (cornersStr.front() == '[' && cornersStr.back() == ']') {
             cornersStr = cornersStr.substr(1, cornersStr.size() - 2);
@@ -90,7 +90,7 @@ vector<Plane> Plane::parsePlaneDataFromJson() {
         for (int i = 0; i < cornerObjects.size(); i++) {
 
 
-            // Extract the specific corner
+            //Extract the current corner
             string cornerDataStr = cornerObjects[i];
 
             float x = getFloat(cornerDataStr, "\"x\"");
@@ -113,14 +113,14 @@ bool Plane::intersect(const Ray& ray, HitStructure& hs){
     float denominator = normal[0]*ray.direction[0] + normal[1]*ray.direction[1] + normal[2]*ray.direction[2];
     if (abs(denominator) < 1e-10){ 
         cout << "parallel\n";
-        return false; // Ray is parallel to plane
+        return false; //Ray is parallel to plane
     }
     
     float t = (normal[0]*(vertices[0][0] - ray.origin[0]) +
             normal[1]*(vertices[0][1] - ray.origin[1]) +
             normal[2]*(vertices[0][2] - ray.origin[2])) / denominator;
     if (t < 0){
-        return false; // Intersection is behind the ray
+        return false; //Intersection is behind the ray
     }
 
     vector<float> intersectPoint = {ray.origin[0] + t*ray.direction[0], ray.origin[1] + t*ray.direction[1], ray.origin[2] + t*ray.direction[2]}; 
@@ -133,6 +133,7 @@ bool Plane::intersect(const Ray& ray, HitStructure& hs){
         hs.rayDistance = sqrt(pow(ray.origin[0] - intersectPoint[0], 2) + pow(ray.origin[1] - intersectPoint[1], 2) + pow(ray.origin[2] - intersectPoint[2], 2 ));
     }
 
+    //True if ray intersects with the plane's axis, and intersection point is within its bounds
     return inPolygon;
 }
 
@@ -145,35 +146,35 @@ bool Plane::pointInsidePolygon(const vector<float>& point){
     float ny = fabs(normal[1]);
     float nz = fabs(normal[2]);
     if (nx > ny && nx > nz)
-        dropAxis = 0; // drop X
+        dropAxis = 0; //drop X
     else if (ny > nz)
-        dropAxis = 1; // drop Y
+        dropAxis = 1; //drop Y
     else
-        dropAxis = 2; // drop Z
+        dropAxis = 2; //drop Z
 
-    // Project 3D point into 2D (drop one coord)
+    //Project 3D point into 2D (drop one coord)
     auto project2D = [&](const vector<float>& p) -> pair<float, float> {
         switch (dropAxis) {
-            case 0:  return {p[1], p[2]}; // drop X
-            case 1:  return {p[0], p[2]}; // drop Y
-            default: return {p[0], p[1]}; // drop Z
+            case 0:  return {p[1], p[2]}; //drop X
+            case 1:  return {p[0], p[2]}; //drop Y
+            default: return {p[0], p[1]}; //drop Z
         }
     };
 
     pair<float, float> P = project2D(point);
 
-    // 2D ray-casting algorithm
+    //2D ray-casting
     bool inside = false;
     int n = static_cast<int>(vertices.size());
     for (int i = 0, j = n - 1; i < n; j = i++) {
         pair<float, float> Pi = project2D(vertices[i]);
         pair<float, float> Pj = project2D(vertices[j]);
 
-        // Skip degenerate edges (both vertices same Y)
+        //Skip degenerate edges (both vertices same Y)
         if (fabs(Pj.second - Pi.second) < 1e-8f)
             continue;
 
-        // Check if the point is between y-bounds of the edge
+        //Check if point is between y-bounds of the edge
         bool intersectY = ((Pi.second > P.second) != (Pj.second > P.second));
         if (intersectY) {
             float slope = (Pj.first - Pi.first) / (Pj.second - Pi.second);
@@ -204,9 +205,9 @@ void Plane::sortVerticesWinding(){
     float ax = fabs(normal[0]);
     float ay = fabs(normal[1]);
     float az = fabs(normal[2]);
-    if (ax > ay && ax > az) dropAxis = 0; // drop X
-    else if (ay > az)       dropAxis = 1; // drop Y
-    else                    dropAxis = 2; // drop Z
+    if (ax > ay && ax > az) dropAxis = 0; //drop X
+    else if (ay > az)       dropAxis = 1; //drop Y
+    else                    dropAxis = 2; //drop Z
 
     //Compute 2D angles around the centroid
     struct VertexAngle {
@@ -218,15 +219,15 @@ void Plane::sortVerticesWinding(){
 
     for (const auto& v : vertices) {
         float x, y, cx, cy;
-        if (dropAxis == 0) { x = v[1]; y = v[2]; cx = center[1]; cy = center[2]; } // drop X
-        else if (dropAxis == 1) { x = v[0]; y = v[2]; cx = center[0]; cy = center[2]; } // drop Y
-        else { x = v[0]; y = v[1]; cx = center[0]; cy = center[1]; } // drop Z
+        if (dropAxis == 0) { x = v[1]; y = v[2]; cx = center[1]; cy = center[2]; } //drop X
+        else if (dropAxis == 1) { x = v[0]; y = v[2]; cx = center[0]; cy = center[2]; } //drop Y
+        else { x = v[0]; y = v[1]; cx = center[0]; cy = center[1]; } //drop Z
 
         float angle = atan2(y - cy, x - cx);
         temp.push_back({v, angle});
     }
 
-    //Sort by angle (CCW winding)
+    //Sort by angle
     sort(temp.begin(), temp.end(), [](const VertexAngle& a, const VertexAngle& b) {
         return a.angle < b.angle;
     });
@@ -257,9 +258,9 @@ AABB Plane::getAABB() const {
     vector<float> min = {FLT_MAX, FLT_MAX, FLT_MAX};
     vector<float> max = {FLT_MIN, FLT_MIN, FLT_MIN};
 
-    // Calculate the minimum and maximum points of the plane's AABB
+    //Calculate the minimum and maximum points of the plane's AABB
     for (int i = 0; i < vertices.size(); i++) {
-        vector<float> vertex = vertices[i]; // Assuming vertices is a vector<vector<float>> member variable
+        vector<float> vertex = vertices[i];
         if (vertex[0] < min[0]) min[0] = vertex[0];
         if (vertex[0] > max[0]) max[0] = vertex[0];
         if (vertex[1] < min[1]) min[1] = vertex[1];

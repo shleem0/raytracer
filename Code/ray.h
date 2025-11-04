@@ -4,6 +4,7 @@
 #include "hit_struct.h"
 #include <vector>
 
+//Class to represent a ray in 3D space
 class Ray{
     public:
         float origin[3];

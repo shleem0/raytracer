@@ -13,28 +13,28 @@ using namespace std;
 
 //Overarching function for parsing camera data from JSON
 vector<Camera> Camera::parseCameraDataFromJson() {
-    // Open JSON file
+    //Open JSON file
     ifstream jsonFile("..\\ASCII\\scene.json");
     if (!jsonFile) {
         cerr << "Error opening JSON file." << endl;
         return {};
     }
 
-    // Read entire file into string
+    //Read entire file into string
     stringstream buffer;
     buffer << jsonFile.rdbuf();
     string jsonStr = buffer.str();
 
-    // Get cameras array as string (includes [ ... ])
+    //Get cameras array as string
     string propertiesStr = getJSONObject(jsonStr, "\"properties\"");
     string camerasArrayStr = getJSONArray(propertiesStr, "\"cameras\"");
 
-    // Remove outer brackets
+    //Remove outer brackets
     if (camerasArrayStr.front() == '[' && camerasArrayStr.back() == ']') {
         camerasArrayStr = camerasArrayStr.substr(1, camerasArrayStr.size() - 2);
     }
 
-    // Split array into full camera objects
+    //Split array into full camera objects
     vector<string> cameraObjects;
     int braces = 0;
     size_t start = 0;
@@ -61,30 +61,30 @@ vector<Camera> Camera::parseCameraDataFromJson() {
     for (int i = 0; i < cameraObjects.size(); i++){
         Camera newCam;
 
-        // Extract the specific camera
+        //Extract the specific camera
         string cameraDataStr = cameraObjects[i];
 
-        // Parse location
+        //Parse location
         string locationStr = getJSONObject(cameraDataStr, "\"location\"");
         newCam.location[0] = getFloat(locationStr, "\"x\"");
         newCam.location[1] = getFloat(locationStr, "\"y\"");
         newCam.location[2] = getFloat(locationStr, "\"z\"");
 
-        // Parse gaze vector
+        //Parse gaze vector
         string gazeVectorStr = getJSONObject(cameraDataStr, "\"gaze_vector\"");
         newCam.gaze_vector[0] = getFloat(gazeVectorStr, "\"x\"");
         newCam.gaze_vector[1] = getFloat(gazeVectorStr, "\"y\"");
         newCam.gaze_vector[2] = getFloat(gazeVectorStr, "\"z\"");
 
-        // Parse focal length
+        //Parse focal length
         newCam.focal_length = getFloat(cameraDataStr, "\"focal_length\"") / 1000.0f;
 
-        // Parse sensor size
+        //Parse sensor width and height
         string sensorStr = getJSONObject(cameraDataStr, "\"sensor\"");
         newCam.sensor_width = getFloat(sensorStr, "\"width\"") / 1000.0f;
         newCam.sensor_height = getFloat(sensorStr, "\"height\"") / 1000.0f;
 
-        // Parse film resolution
+        //Parse resolution
         string filmResolutionStr = getJSONObject(cameraDataStr, "\"film_resolution\"");
         newCam.res_x = getFloat(filmResolutionStr, "\"width\"");
         newCam.res_y = getFloat(filmResolutionStr, "\"height\"");
@@ -95,7 +95,7 @@ vector<Camera> Camera::parseCameraDataFromJson() {
 }
 
 
-// Compute ray for pixel (x, y)
+//Compute ray for pixel (x, y)
 Ray Camera::convertPixelToRay(float x, float y) const {
 
     Ray ray;
@@ -107,7 +107,7 @@ Ray Camera::convertPixelToRay(float x, float y) const {
     //Convert to camera space
     float cam_x = (u - 0.5f) * (sensor_width / focal_length);
     float cam_y = (0.5f - v) * (sensor_height / focal_length);
-    float cam_z = -1.0f; // Blender camera looks along -Z
+    float cam_z = -1.0f; //Blender camera looks along -Z
 
     //Normalize forward
     float len = sqrt(gaze_vector[0]*gaze_vector[0] +
@@ -117,7 +117,6 @@ Ray Camera::convertPixelToRay(float x, float y) const {
     float forward[3] = { gaze_vector[0]/len, gaze_vector[1]/len, gaze_vector[2]/len };
 
     //Compute right vector
-    //cross(world_up, forward) to ensure right-hand system
     float world_up[3] = {0.0f, 1.0f, 0.0f};
     float right[3] = {
         world_up[1]*forward[2] - world_up[2]*forward[1],
@@ -127,7 +126,7 @@ Ray Camera::convertPixelToRay(float x, float y) const {
     float rlen = sqrt(right[0]*right[0] + right[1]*right[1] + right[2]*right[2]);
 
     if (rlen < 1e-6f) {
-        // forward was almost parallel to world_up, choose alternative up
+        //forward was almost parallel to world_up, choose alternative up
         world_up[0] = 0.0f; world_up[1] = 0.0f; world_up[2] = 1.0f;
         right[0] = world_up[1]*forward[2] - world_up[2]*forward[1];
         right[1] = world_up[2]*forward[0] - world_up[0]*forward[2];
@@ -153,7 +152,7 @@ Ray Camera::convertPixelToRay(float x, float y) const {
                         ray.direction[1]*ray.direction[1] +
                         ray.direction[2]*ray.direction[2]);
     if (dlen < 1e-6f) {
-        // Handle division by zero or very small value, e.g., set a default direction
+        //Handle division by zero or very small value, e.g., set a default direction
         ray.direction[0] = 0.0f; ray.direction[1] = 0.0f; ray.direction[2] = 1.0f;
         dlen = sqrt(ray.direction[0]*ray.direction[0] +
                         ray.direction[1]*ray.direction[1] +
@@ -178,7 +177,7 @@ Ray Camera::convertPixelToRay(float x, float y) const {
 
 
 /*Helper functions for parsing JSON data*/
-// Function to get a float value from a JSON string
+//Function to get a float value from a JSON string
 float Camera::getFloat(const string& str, const string& key) {
     size_t pos = str.find(key);
     if (pos == string::npos) {
@@ -190,7 +189,7 @@ float Camera::getFloat(const string& str, const string& key) {
         throw runtime_error("Invalid JSON string");
     }
 
-    start += 1; // Skip the colon
+    start += 1; //Skip the colon
     while (start < str.length() && isspace(str[start])) {
         start++;
     }
@@ -203,7 +202,7 @@ float Camera::getFloat(const string& str, const string& key) {
     return stof(str.substr(start, end - start));
 }
 
-// Function to get a JSON object value from a JSON string
+//Function to get a JSON object value from a JSON string
 string Camera::getJSONObject(const string& str, const string& key) {
     size_t pos = str.find(key);
     if (pos == string::npos) {
@@ -232,6 +231,8 @@ string Camera::getJSONObject(const string& str, const string& key) {
     return str.substr(start, end - start + 1);
 }
 
+
+//Function to get a JSON array from a JSON string
 string Camera::getJSONArray(const string& str, const string& key) {
     size_t pos = str.find(key);
     if (pos == string::npos) {
@@ -255,5 +256,5 @@ string Camera::getJSONArray(const string& str, const string& key) {
         throw runtime_error("Mismatched brackets in JSON string");
     }
 
-    return str.substr(start, end - start); // includes outer [ ... ]
+    return str.substr(start, end - start); //includes outer [ ... ]
 }

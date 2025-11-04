@@ -4,8 +4,10 @@
 
 using namespace std;
 
+//Build the BVH node for a given AABB
 BVHNode::BVHNode(const AABB& box) : aabb(box), left(nullptr), right(nullptr) {}
 
+//Build the next BVH node given a child BVH node
 BVHNode::BVHNode(const BVHNode& other)
     : aabb(other.aabb), left(nullptr), right(nullptr) {
     planes = other.planes;
@@ -30,7 +32,7 @@ BVHNode::~BVHNode() {
 
 
 bool BVHNode::intersect(Ray& ray, float& tMin, float& tMax){
-    // First, check if ray intersects this node's bounding box
+    //Check if ray intersects this node's bounding box
     if (!aabb.intersect(ray, tMin, tMax)) {
         return false;
     }
@@ -39,14 +41,14 @@ bool BVHNode::intersect(Ray& ray, float& tMin, float& tMax){
     float tLeftMin = tMin, tLeftMax = tMax;
     float tRightMin = tMin, tRightMax = tMax;
 
-    // Recursively check left child
+    //Recursively check left child
     if (left && left->intersect(ray, tLeftMin, tLeftMax)) {
         tMin = tLeftMin;
         tMax = tLeftMax;
         hit = true;
     }
 
-    // Recursively check right child
+    //Recursively check right child
     if (right && right->intersect(ray, tRightMin, tRightMax)) {
         if (!hit || tRightMin < tMin) {
             tMin = tRightMin;
@@ -55,10 +57,10 @@ bool BVHNode::intersect(Ray& ray, float& tMin, float& tMax){
         hit = true;
     }
 
-    // If we hit an internal child, return true
+    //If hit an internal child, return true
     if (hit) return true;
 
-    // Leaf node: check primitives
+    //Leaf node - check primitives
     if (!left && !right) {
         for (auto plane : planes) {
             HitStructure hs;
@@ -88,13 +90,13 @@ bool BVHNode::intersect(Ray& ray, float& tMin, float& tMax){
         }
     }
 
-    return false; // No intersection found
+    return false; //No intersection
 }
 
 
 BVHNode* BVHNode::buildBVH(const vector<Plane> planes, const vector<Cube> cubes, const vector<Sphere> spheres, int maxDepth) {
     if (maxDepth == 0) {
-        // Create a leaf node
+        //Create a leaf node
         AABB aabb = AABB::fromPoints(planes, cubes, spheres);
         BVHNode* node = new BVHNode(aabb);
         node->planes.insert(node->planes.end(), planes.begin(), planes.end());
@@ -103,19 +105,19 @@ BVHNode* BVHNode::buildBVH(const vector<Plane> planes, const vector<Cube> cubes,
         return node;
     }
 
-    // Calculate the bounding box for all objects
+    //Calculate the bounding box for all objects
     AABB aabb = AABB::fromPoints(planes, cubes, spheres);
 
-    // Choose the axis to split on (x, y, or z)
-    int axis = 0;  // X-axis
+    //Choose the axis to split on (x, y, or z)
+    int axis = 0;  //X-axis
     if (aabb.max[1] - aabb.min[1] > aabb.max[0] - aabb.min[0]) {
-        axis = 1;  // Y-axis
+        axis = 1;  //Y-axis
     }
     if (aabb.max[2] - aabb.min[2] > aabb.max[0] - aabb.min[0] && aabb.max[2] - aabb.min[2] > aabb.max[1] - aabb.min[1]) {
-        axis = 2;  // Z-axis
+        axis = 2;  //Z-axis
     }
 
-    // Split the objects into two sets
+    //Split the objects into two sets
     vector<Plane> leftPlanes;
     vector<Cube> leftCubes;
     vector<Sphere> leftSpheres;
@@ -146,7 +148,7 @@ BVHNode* BVHNode::buildBVH(const vector<Plane> planes, const vector<Cube> cubes,
         }
     }
 
-    // Recursively build the left and right child nodes
+    //Recursively build the left and right child nodes
     BVHNode* node = new BVHNode(aabb);
     if (!leftPlanes.empty() || !leftCubes.empty() || !leftSpheres.empty()) {
         node->left = buildBVH(leftPlanes, leftCubes, leftSpheres, maxDepth - 1);

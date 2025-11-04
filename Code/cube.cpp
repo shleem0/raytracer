@@ -9,35 +9,34 @@
 #include "cube.h"
 #include "ray.h"
 #include "hit_struct.h"
-#include "transformer.h"
 #include "aabb.h"
 
 using namespace std;
 
 //Overarching function for parsing cube data from JSON
 vector<Cube> Cube::parseCubeDataFromJson() {
-    // Open JSON file
+    //Open JSON file
     ifstream jsonFile("..\\ASCII\\scene.json");
     if (!jsonFile) {
         cerr << "Error opening JSON file." << endl;
         return {};
     }
 
-    // Read entire file into string
+    //Read file into string
     stringstream buffer;
     buffer << jsonFile.rdbuf();
     string jsonStr = buffer.str();
 
-    // Get cubes array as string (includes [ ... ])
+    //Get cubes array as string
     string propertiesStr = getJSONObject(jsonStr, "\"properties\"");
     string cubesArrayStr = getJSONArray(propertiesStr, "\"cubes\"");
 
-    // Remove outer brackets
+    //Remove outer brackets
     if (cubesArrayStr.front() == '[' && cubesArrayStr.back() == ']') {
         cubesArrayStr = cubesArrayStr.substr(1, cubesArrayStr.size() - 2);
     }
 
-    // Split array into full cube objects
+    //Split array into cube objects
     vector<string> cubeObjects;
     int braces = 0;
     size_t start = 0;
@@ -64,22 +63,22 @@ vector<Cube> Cube::parseCubeDataFromJson() {
 
         Cube newCube;
 
-        // Extract the specific cube
+        //Extract the current cube
         string cubeDataStr = cubeObjects[i];
 
-        // Parse location
+        //Parse location
         string locationStr = getJSONObject(cubeDataStr, "\"translation\"");
         newCube.location[0] = getFloat(locationStr, "\"x\"");
         newCube.location[1] = getFloat(locationStr, "\"y\"");
         newCube.location[2] = getFloat(locationStr, "\"z\"");
 
-        // Parse location
+        //Parse rotation
         string rotationStr = getJSONObject(cubeDataStr, "\"rotation\"");
         newCube.rotation[0] = getFloat(rotationStr, "\"x\"");
         newCube.rotation[1] = getFloat(rotationStr, "\"y\"");
         newCube.rotation[2] = getFloat(rotationStr, "\"z\"");
 
-        // Parse scale
+        //Parse 1D scale
         newCube.scale = getFloat(cubeDataStr, "\"scale\"");
 
         cubes.push_back(newCube);
@@ -91,15 +90,15 @@ vector<Cube> Cube::parseCubeDataFromJson() {
 
 
 bool Cube::intersect(const Ray& ray, HitStructure& hs){
-    // Step 1: transform ray into local space
+    //Transform ray into local space
     Ray local = ray;
 
-    // translate
+    //Translate
     local.origin[0] -= location[0];
     local.origin[1] -= location[1];
     local.origin[2] -= location[2];
 
-    // inverse rotate
+    //Inverse rotate
     vector<float> o = {local.origin[0], local.origin[1], local.origin[2]};
     vector<float> d = {local.direction[0], local.direction[1], local.direction[2]};
     rotateXYZInverse(o, rotation);
@@ -112,7 +111,7 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs){
     local.direction[1] = d[1]/scale;
     local.direction[2] = d[2]/scale;
 
-    // Step 2: intersect with local AABB (-1 to 1)
+    //Intersect with local AABB (-1 to 1)
     float tmin = -INFINITY, tmax = INFINITY;
     for (int i = 0; i < 3; i++) {
         if (fabs(local.direction[i]) < 1e-6f) {
@@ -130,7 +129,7 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs){
     float t = (tmin > 0) ? tmin : tmax;
     if (t < 0) return false;
 
-    // Step 3: compute hit point and normal (local)
+    //Compute hit point and normal (local)
     vector<float> hitLocal= {
         local.origin[0] + t * local.direction[0],
         local.origin[1] + t * local.direction[1],
@@ -148,7 +147,7 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs){
     else
         normalLocal[2] = (hitLocal[2] > 0) ? 1 : -1;
 
-    // Step 4: transform back to world space
+    //Transform back to world space
     vector<float> hitWorld = {
         hitLocal[0] * scale,
         hitLocal[1] * scale,
@@ -166,9 +165,8 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs){
     for (int i = 0; i < 3; i++)
         normalLocal[i] /= len;
 
-    // Step 5: write result
+    //Write result
     hs.hitPoint = {hitWorld[0], hitWorld[1], hitWorld[2]};
-    //hs.normal = {normalLocal[0], normalLocal[1], normalLocal[2]};
     hs.rayDistance = t * scale;
 
     return true;
@@ -180,19 +178,19 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs){
 void Cube::rotateXYZ(vector<float>& v, float rot[3]) {
     float x = v[0], y = v[1], z = v[2];
 
-    // X rotation
+    //X rotation
     float cx = cos(rot[0]), sx = sin(rot[0]);
     float y1 = y * cx - z * sx;
     float z1 = y * sx + z * cx;
     y = y1; z = z1;
 
-    // Y rotation
+    //Y rotation
     float cy = cos(rot[1]), sy = sin(rot[1]);
     float x2 = x * cy + z * sy;
     float z2 = -x * sy + z * cy;
     x = x2; z = z2;
 
-    // Z rotation
+    //Z rotation
     float cz = cos(rot[2]), sz = sin(rot[2]);
     float x3 = x * cz - y * sz;
     float y3 = x * sz + y * cz;

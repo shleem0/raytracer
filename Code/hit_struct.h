@@ -6,6 +6,7 @@
 
 using namespace std;
 
+//Data on a ray intersectin with a shape
 struct HitStructure{
     vector<float> hitPoint;
     float rayDistance;

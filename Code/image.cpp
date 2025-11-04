@@ -4,11 +4,12 @@
 #include "image.h"
 using namespace std;
 
+
 Image::Image(const string& fileName){
     file = fileName;
 }
 
-//Function to read image, pixel by pixel
+
 void Image::readImage() {
     ifstream fileStream("../Textures/" + file);
 
@@ -25,8 +26,11 @@ void Image::readImage() {
 
     fileStream >> width >> height >> maxColourValue;
 
+    //Adjust pixel colour array to size of image
     pixelValues.resize(height, vector<vector<int>>(width, vector<int>(3)));
 
+
+    //Store each pixel's colour
     int value;
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
@@ -43,7 +47,6 @@ void Image::readImage() {
     fileStream.close();
 }
 
-//Function to modify pixels colour by RGB values
 void Image::modifyPixel(int x, int y, int red, int green, int blue) {
     if (x < 0 || x >= width || y < 0 || y >= height) {
         throw runtime_error("Pixel coordinates are out of bounds");
@@ -55,7 +58,7 @@ void Image::modifyPixel(int x, int y, int red, int green, int blue) {
 }
 
 
-//Function to write image to chosen file
+
 void Image::writeImage(const string& outputFileName) {
     ofstream fileStream("../Textures/" + outputFileName);
 

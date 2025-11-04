@@ -10,28 +10,30 @@ class Cube;
 class Sphere;
 class Ray;
 
+
+//The class representing axis-aligned bounding boxes
 class AABB{
     public:
-        vector<float> min;  // Minimum point (lower-left-front corner)
-        vector<float> max;  // Maximum point (upper-right-back corner)
+        vector<float> min;  //Minimum point (lower-left-front corner)
+        vector<float> max;  //Maximum point (upper-right-back corner)
 
-        // Constructor
+        //Constructor
         AABB(vector<float> minPoint, vector<float> maxPoint);
         AABB(const AABB& other);
 
-        // Check if a point is inside the AABB
+        //Check if a point is inside the AABB
         bool contains(const vector<float>) const;
 
-        // Check if a ray intersects the AABB
+        //Check if a ray intersects the AABB
         bool intersect(const Ray&, float&, float&) const;
 
-        // Calculate the AABB for a list of points
+        //Calculate the AABB for all shapes in the scene
         static AABB fromPoints(const vector<Plane>, const vector<Cube>, const vector<Sphere>);
 
-        // Calculate the AABB for a list of points
+        //Calculate the AABB for a list of points
         static AABB fromPoints(const vector<vector<float>>);
 
-        // Union of two AABBs
+        //Union of two AABBs
         static AABB unionOf(const AABB&, const AABB&);
 };
 

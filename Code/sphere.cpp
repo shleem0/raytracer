@@ -14,28 +14,28 @@ using namespace std;
 
 //Overarching function for parsing sphere data from JSON
 vector<Sphere> Sphere::parseSphereDataFromJson() {
-    // Open JSON file
+    //Open JSON file
     ifstream jsonFile("..\\ASCII\\scene.json");
     if (!jsonFile) {
         cerr << "Error opening JSON file." << endl;
         return {};
     }
 
-    // Read entire file into string
+    //Read file into string
     stringstream buffer;
     buffer << jsonFile.rdbuf();
     string jsonStr = buffer.str();
 
-    // Get spheres array as string (includes [ ... ])
+    //Get spheres array as string
     string propertiesStr = getJSONObject(jsonStr, "\"properties\"");
     string spheresArrayStr = getJSONArray(propertiesStr, "\"spheres\"");
 
-    // Remove outer brackets
+    //Remove outer brackets
     if (spheresArrayStr.front() == '[' && spheresArrayStr.back() == ']') {
         spheresArrayStr = spheresArrayStr.substr(1, spheresArrayStr.size() - 2);
     }
 
-    // Split array into full sphere objects
+    //Split array into sphere objects
     vector<string> sphereObjects;
     int braces = 0;
     size_t start = 0;
@@ -62,16 +62,16 @@ vector<Sphere> Sphere::parseSphereDataFromJson() {
 
         Sphere newSphere;
 
-        // Extract the specific sphere
+        //Extract the current sphere
         string sphereDataStr = sphereObjects[i];
 
-        // Parse location
+        //Parse location
         string locationStr = getJSONObject(sphereDataStr, "\"location\"");
         newSphere.location[0] = getFloat(locationStr, "\"x\"");
         newSphere.location[1] = getFloat(locationStr, "\"y\"");
         newSphere.location[2] = getFloat(locationStr, "\"z\"");
 
-        // Parse focal length
+        //Parse radius
         newSphere.radius = getFloat(sphereDataStr, "\"radius\"");
 
         spheres.push_back(newSphere);
@@ -89,13 +89,13 @@ bool Sphere::intersect(const Ray& ray, HitStructure& hs){
     float tca = l[0] * ray.direction[0] + l[1] * ray.direction[1] + l[2] * ray.direction[2];
     
     if (tca < 0){ //If sphere's centre is behind ray origin
-        return false;
+        return false; //No intersect
     }
 
     float d2 = l[0]*l[0] + l[1]*l[1] + l[2]*l[2] - tca*tca;
 
-    if (d2 > radius*radius){
-        return false;
+    if (d2 > radius*radius){ //If ray does not pass through radius
+        return false; //No intersectiom
     }
 
     float thc = sqrt(radius*radius - d2);
@@ -113,7 +113,7 @@ bool Sphere::intersect(const Ray& ray, HitStructure& hs){
     return true;
 }
 
-
+//Get AABB of the sphere
 AABB Sphere::getAABB() const {
     vector<float> min = {location[0] - radius, location[1] - radius, location[2] - radius};
     vector<float> max = {location[0] + radius, location[1] + radius, location[2] + radius};
