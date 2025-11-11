@@ -10,6 +10,11 @@ using namespace std;
 class Shape{
     public:
         float location[3];
+        float diffuse[3];
+        float specular[3];
+        float shininess;
+        float transparency;
+        float ior;
 
         //Parse a float value from a JSON object
         static float getFloat(const string&, const string&);

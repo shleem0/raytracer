@@ -10,6 +10,13 @@ using namespace std;
 struct HitStructure{
     vector<float> hitPoint;
     float rayDistance;
+
+    vector<float> normal;
+    vector<float> diffuse;
+    vector<float> specular;
+    float shininess;
+    float transparency;
+    float ior;
     string objectType;
 };
 

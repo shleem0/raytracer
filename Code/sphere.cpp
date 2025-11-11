@@ -74,6 +74,23 @@ vector<Sphere> Sphere::parseSphereDataFromJson() {
         //Parse radius
         newSphere.radius = getFloat(sphereDataStr, "\"radius\"");
 
+        //Parse material data
+        string materialStr = getJSONObject(sphereDataStr, "\"material\"");
+        newSphere.diffuse[0] = getFloat(materialStr, "\"r\"");
+        newSphere.diffuse[1] = getFloat(materialStr, "\"g\"");
+        newSphere.diffuse[2] = getFloat(materialStr, "\"b\"");
+
+        string specStr = getJSONObject(sphereDataStr, "\"specular\"");
+        newSphere.specular[0] = getFloat(materialStr, "\"r\"");
+        newSphere.specular[1] = getFloat(materialStr, "\"g\"");
+        newSphere.specular[2] = getFloat(materialStr, "\"b\"");
+
+        newSphere.shininess = getFloat(sphereDataStr, "\"shininess\"");
+
+        newSphere.transparency = getFloat(sphereDataStr, "\"transparency\"");
+
+        newSphere.ior = getFloat(sphereDataStr, "\"ior\"");
+
         spheres.push_back(newSphere);
     }
 
@@ -108,7 +125,13 @@ bool Sphere::intersect(const Ray& ray, HitStructure& hs){
     vector<float> intersectPoint = {ray.origin[0] + t * ray.direction[0], ray.origin[1] + t * ray.direction[1], ray.origin[2] + t * ray.direction[2]};
 
     hs.hitPoint = intersectPoint;
+    hs.normal = {(intersectPoint[0] - location[0]) / radius, (intersectPoint[1] - location[1]) / radius, (intersectPoint[2] - location[2]) / radius};
     hs.rayDistance = sqrt(pow(ray.origin[0] - intersectPoint[0], 2) + pow(ray.origin[1] - intersectPoint[1], 2) + pow(ray.origin[2] - intersectPoint[2], 2 ));
+    hs.diffuse = {diffuse[0], diffuse[1], diffuse[2]};
+    hs.specular = {specular[0], specular[1], specular[2]};
+    hs.shininess = shininess;
+    hs.transparency = transparency;
+    hs.ior = ior;
 
     return true;
 }

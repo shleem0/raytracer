@@ -101,8 +101,25 @@ vector<Plane> Plane::parsePlaneDataFromJson() {
             newPlane.vertices.push_back(pos);
 
         }
-
         newPlane.calculateNormal();
+
+        //Parse material data
+        string materialStr = getJSONObject(planeDataStr, "\"material\"");
+        newPlane.diffuse[0] = getFloat(materialStr, "\"r\"");
+        newPlane.diffuse[1] = getFloat(materialStr, "\"g\"");
+        newPlane.diffuse[2] = getFloat(materialStr, "\"b\"");
+
+        string specStr = getJSONObject(planeDataStr, "\"specular\"");
+        newPlane.specular[0] = getFloat(materialStr, "\"r\"");
+        newPlane.specular[1] = getFloat(materialStr, "\"g\"");
+        newPlane.specular[2] = getFloat(materialStr, "\"b\"");
+
+        newPlane.shininess = getFloat(planeDataStr, "\"shininess\"");
+
+        newPlane.transparency = getFloat(planeDataStr, "\"shininess\"");
+
+        newPlane.ior = getFloat(planeDataStr, "\"ior\"");
+
         planes.push_back(newPlane);
     }
 
@@ -112,7 +129,6 @@ vector<Plane> Plane::parsePlaneDataFromJson() {
 bool Plane::intersect(const Ray& ray, HitStructure& hs){
     float denominator = normal[0]*ray.direction[0] + normal[1]*ray.direction[1] + normal[2]*ray.direction[2];
     if (abs(denominator) < 1e-10){ 
-        cout << "parallel\n";
         return false; //Ray is parallel to plane
     }
     
@@ -131,6 +147,12 @@ bool Plane::intersect(const Ray& ray, HitStructure& hs){
     if (inPolygon){
         hs.hitPoint = intersectPoint;
         hs.rayDistance = sqrt(pow(ray.origin[0] - intersectPoint[0], 2) + pow(ray.origin[1] - intersectPoint[1], 2) + pow(ray.origin[2] - intersectPoint[2], 2 ));
+        hs.normal = normal;
+        hs.diffuse = {diffuse[0], diffuse[1], diffuse[2]};
+        hs.specular = {specular[0], specular[1], specular[2]};
+        hs.shininess = shininess;
+        hs.transparency = transparency;
+        hs.ior = ior;
     }
 
     //True if ray intersects with the plane's axis, and intersection point is within its bounds
@@ -239,6 +261,9 @@ void Plane::sortVerticesWinding(){
 
 
 void Plane::calculateNormal(){
+
+    normal = {0.0, 0.0, 0.0};
+
     float a[3] = {vertices[1][0] - vertices[0][0], vertices[1][1] - vertices[0][1], vertices[1][2] - vertices[0][2]};
     float b[3] = {vertices[2][0] - vertices[0][0], vertices[2][1] - vertices[0][1], vertices[2][2] - vertices[0][2]};
 
@@ -251,6 +276,7 @@ void Plane::calculateNormal(){
     normal[0] /= normal_length;
     normal[1] /= normal_length;
     normal[2] /= normal_length;
+
 }
 
 

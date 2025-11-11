@@ -81,6 +81,24 @@ vector<Cube> Cube::parseCubeDataFromJson() {
         //Parse 1D scale
         newCube.scale = getFloat(cubeDataStr, "\"scale\"");
 
+
+        //Parse material data
+        string materialStr = getJSONObject(cubeDataStr, "\"material\"");
+        newCube.diffuse[0] = getFloat(materialStr, "\"r\"");
+        newCube.diffuse[1] = getFloat(materialStr, "\"g\"");
+        newCube.diffuse[2] = getFloat(materialStr, "\"b\"");
+
+        string specStr = getJSONObject(cubeDataStr, "\"specular\"");
+        newCube.specular[0] = getFloat(materialStr, "\"r\"");
+        newCube.specular[1] = getFloat(materialStr, "\"g\"");
+        newCube.specular[2] = getFloat(materialStr, "\"b\"");
+
+        newCube.shininess = getFloat(cubeDataStr, "\"shininess\"");
+
+        newCube.transparency = getFloat(cubeDataStr, "\"transparency\"");
+
+        newCube.ior = getFloat(cubeDataStr, "\"ior\"");
+
         cubes.push_back(newCube);
     }
 
@@ -167,7 +185,13 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs){
 
     //Write result
     hs.hitPoint = {hitWorld[0], hitWorld[1], hitWorld[2]};
+    hs.normal = normalLocal;
     hs.rayDistance = t * scale;
+    hs.diffuse = {diffuse[0], diffuse[1], diffuse[2]};
+    hs.specular = {specular[0], specular[1], specular[2]};
+    hs.shininess = shininess;
+    hs.transparency = transparency;
+    hs.ior = ior;
 
     return true;
 }

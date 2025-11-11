@@ -14,7 +14,7 @@ using namespace std;
 class Plane : public Shape{
     public:
         vector<vector<float>> vertices;
-        float normal[3];
+        vector<float> normal;
 
         //Parse all plane data from the scene's JSON
         static vector<Plane> parsePlaneDataFromJson();

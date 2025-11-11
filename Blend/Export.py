@@ -58,9 +58,11 @@ def get_sphere_data(sphere):
     """Get sphere data"""
     location = sphere.location
     radius = sphere.scale.x  # spheres are often scaled equally in all directions
+    material = get_material_data(sphere)
     return {
         "location": {"x": location.x, "y": location.y, "z": location.z},
-        "radius": radius
+        "radius": radius,
+        "material": material
     }
 
 def get_cube_data(cube):
@@ -68,22 +70,87 @@ def get_cube_data(cube):
     translation = cube.location
     rotation = cube.rotation_euler
     scale = cube.scale.x  # cubes are often scaled equally in all directions
+    material = get_material_data(cube)
     return {
         "translation": {"x": translation.x, "y": translation.y, "z": translation.z},
         "rotation": {"x": rotation.x, "y": rotation.y, "z": rotation.z},
-        "scale": scale
+        "scale": scale,
+        "material": material
     }
 
 def get_plane_data(plane):
     """Get plane data"""
     # Get the corners of the plane by applying the matrix_world to the vertices
     corners = []
+    material = get_material_data(plane)
     for vertex in plane.data.vertices:
         corner = plane.matrix_world @ vertex.co
         corners.append({"x": corner.x, "y": corner.y, "z": corner.z})
     return {
-        "corners": corners
+        "corners": corners,
+        "material": material
     }
+
+
+def get_material_data(obj):
+    """Extract material info from a mesh object"""
+    if not obj.data.materials:
+        # Default material if none assigned
+        return {
+            "diffuse": {"r": 1.0, "g": 1.0, "b": 1.0},
+            "specular": {"r": 1.0, "g": 1.0, "b": 1.0},
+            "shininess": 32.0,
+            "transparency": 0.0,
+            "ior": 1.0
+        }
+
+    mat = obj.data.materials[0]  # Take the first material for simplicity
+
+    # Default values
+    diffuse = {"r": 1.0, "g": 1.0, "b": 1.0}
+    specular = {"r": 1.0, "g": 1.0, "b": 1.0}
+    shininess = 32.0
+    transparency = 0.0
+    ior = 1.0
+
+    if mat.node_tree:
+        for node in mat.node_tree.nodes:
+            if node.type == 'BSDF_PRINCIPLED':
+                # Diffuse color
+                if 'Base Color' in node.inputs:
+                    base_color = node.inputs['Base Color'].default_value
+                    diffuse = {"r": base_color[0], "g": base_color[1], "b": base_color[2]}
+                
+                # Specular intensity (scalar)
+                if 'Specular' in node.inputs:
+                    s = node.inputs['Specular'].default_value
+                    specular = {"r": s, "g": s, "b": s}
+                
+                # Roughness → shininess
+                if 'Roughness' in node.inputs:
+                    roughness = node.inputs['Roughness'].default_value
+                    shininess = max(1.0, (1.0 - roughness) * 128.0)
+                    
+                #Transparency
+                if 'Transmission' in node.inputs:
+                    transmission = node.inputs['Transmission'].default_value
+                    transparency = max(0.0, min(1.0, transmission))
+
+                # --- Refractive Index (IOR) ---
+                if 'IOR' in node.inputs:
+                    ior = node.inputs['IOR'].default_value
+
+                break  # Only process first Principled BSDF node
+
+    return {
+        "diffuse": diffuse,
+        "specular": specular,
+        "shininess": shininess,
+        "transparency": transparency,
+        "ior": ior
+    }
+
+
 
 def export_to_json():
     """Export the scene data to JSON"""

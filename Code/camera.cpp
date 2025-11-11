@@ -105,7 +105,7 @@ Ray Camera::convertPixelToRay(float x, float y) const {
     float v = (y + 0.5f) / res_y;
 
     //Convert to camera space
-    float cam_x = (u - 0.5f) * (sensor_width / focal_length);
+    float cam_x = -(u - 0.5f) * (sensor_width / focal_length);
     float cam_y = (0.5f - v) * (sensor_height / focal_length);
     float cam_z = -1.0f; //Blender camera looks along -Z
 
@@ -117,12 +117,15 @@ Ray Camera::convertPixelToRay(float x, float y) const {
     float forward[3] = { gaze_vector[0]/len, gaze_vector[1]/len, gaze_vector[2]/len };
 
     //Compute right vector
-    float world_up[3] = {0.0f, 1.0f, 0.0f};
+    float world_up[3] = {0.0f, 0.0f, 1.0f};
+
+    // Standard right-handed camera: right = forward × world_up
     float right[3] = {
-        world_up[1]*forward[2] - world_up[2]*forward[1],
-        world_up[2]*forward[0] - world_up[0]*forward[2],
-        world_up[0]*forward[1] - world_up[1]*forward[0]
+        forward[1]*world_up[2] - forward[2]*world_up[1],
+        forward[2]*world_up[0] - forward[0]*world_up[2],
+        forward[0]*world_up[1] - forward[1]*world_up[0]
     };
+
     float rlen = sqrt(right[0]*right[0] + right[1]*right[1] + right[2]*right[2]);
 
     if (rlen < 1e-6f) {
@@ -143,9 +146,9 @@ Ray Camera::convertPixelToRay(float x, float y) const {
     };
 
     //Compute direction in world space
-    ray.direction[0] = cam_x*right[0] + cam_y*up[0] + cam_z*forward[0];
-    ray.direction[1] = cam_x*right[1] + cam_y*up[1] + cam_z*forward[1];
-    ray.direction[2] = cam_x*right[2] + cam_y*up[2] + cam_z*forward[2];
+    ray.direction = {cam_x*right[0] + cam_y*up[0] + cam_z*forward[0],
+        cam_x*right[1] + cam_y*up[1] + cam_z*forward[1],
+        cam_x*right[2] + cam_y*up[2] + cam_z*forward[2]};
 
     //Normalize
     float dlen = sqrt(ray.direction[0]*ray.direction[0] +
@@ -158,6 +161,7 @@ Ray Camera::convertPixelToRay(float x, float y) const {
                         ray.direction[1]*ray.direction[1] +
                         ray.direction[2]*ray.direction[2]);
     }
+
     ray.direction[0] /= dlen;
     ray.direction[1] /= dlen;
     ray.direction[2] /= dlen;
@@ -166,10 +170,7 @@ Ray Camera::convertPixelToRay(float x, float y) const {
     ray.direction[1] = -ray.direction[1];
     ray.direction[2] = -ray.direction[2];
     
-
-    ray.origin[0] = location[0];
-    ray.origin[1] = location[1];
-    ray.origin[2] = location[2];
+    ray.origin = {location[0], location[1], location[2]};
 
     return ray;
 }

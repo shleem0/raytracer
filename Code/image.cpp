@@ -29,7 +29,6 @@ void Image::readImage() {
     //Adjust pixel colour array to size of image
     pixelValues.resize(height, vector<vector<int>>(width, vector<int>(3)));
 
-
     //Store each pixel's colour
     int value;
     for (int y = 0; y < height; ++y) {
@@ -48,6 +47,7 @@ void Image::readImage() {
 }
 
 void Image::modifyPixel(int x, int y, int red, int green, int blue) {
+
     if (x < 0 || x >= width || y < 0 || y >= height) {
         throw runtime_error("Pixel coordinates are out of bounds");
     }
@@ -60,7 +60,7 @@ void Image::modifyPixel(int x, int y, int red, int green, int blue) {
 
 
 void Image::writeImage(const string& outputFileName) {
-    ofstream fileStream("../Textures/" + outputFileName);
+    ofstream fileStream("../Output/" + outputFileName);
 
     if (!fileStream.is_open()) {
         throw runtime_error("Failed to open the output file");

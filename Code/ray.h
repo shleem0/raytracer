@@ -7,8 +7,8 @@
 //Class to represent a ray in 3D space
 class Ray{
     public:
-        float origin[3];
-        float direction[3];
+        vector<float> origin;
+        vector<float> direction;
         vector<HitStructure> hs;
 };
 #endif

@@ -1,5 +1,6 @@
 #include <vector>
 #include <iostream>
+#include <cmath>
 #include "bvh.h"
 
 using namespace std;
@@ -62,31 +63,45 @@ bool BVHNode::intersect(Ray& ray, float& tMin, float& tMax){
 
     //Leaf node - check primitives
     if (!left && !right) {
+
+        HitStructure closestHit;
+        float closestDist = numeric_limits<float>::infinity();
+        
         for (auto plane : planes) {
             HitStructure hs;
-            if (plane.intersect(ray, hs)) {
+            if (plane.intersect(ray, hs) && hs.rayDistance >= 0.0f && hs.rayDistance < closestDist){
+                hit = true;
                 hs.objectType = "Plane";
-                ray.hs.push_back(hs);
-                return true;
+                closestDist = hs.rayDistance;
+                closestHit = hs;
             }
         }
 
+
         for (auto cube : cubes) {
             HitStructure hs;
-            if (cube.intersect(ray, hs)) {
+            if (cube.intersect(ray, hs) && hs.rayDistance >= 0.0f && hs.rayDistance < closestDist) {
+                hit = true;
                 hs.objectType = "Cube";
-                ray.hs.push_back(hs);
-                return true;
+                closestDist = hs.rayDistance;
+                closestHit = hs;
             }
         }
 
         for (auto sphere : spheres) {
             HitStructure hs;
-            if (sphere.intersect(ray, hs)) {
+            if (sphere.intersect(ray, hs) && hs.rayDistance >= 0.0f && hs.rayDistance < closestDist) {
+                hit = true;
                 hs.objectType = "Sphere";
-                ray.hs.push_back(hs);
-                return true;
+                closestDist = hs.rayDistance;
+                closestHit = hs;
             }
+        }
+        
+        if (hit){
+            ray.hs.push_back(closestHit);
+            tMax = closestDist;
+            return true;
         }
     }
 

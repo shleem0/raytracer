@@ -8,3 +8,4 @@ Ray intersection - implemented ray intersection checker for each shape type, ens
 
 Acceleration - implemented a bounding volume hierarchy structure using axis-aligned bounded boxes for each shape to speed up the ray-tracing processes
 
+Whitted-style Raytracing - for each pixel in the camera's image plane, a ray is traced into the scene. The ray's intersection with scene shapes is tested, then shaded appropriately via Blinn-Phong. A refracted and reflected ray are traced from this point, with their contributions adding to the final colour.
