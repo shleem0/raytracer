@@ -94,14 +94,15 @@ def get_plane_data(plane):
 
 def get_material_data(obj):
     """Extract material info from a mesh object"""
-    if not obj.data.materials:
+    if not obj.data.materials or obj.data.materials[0] is None:
         # Default material if none assigned
         return {
             "diffuse": {"r": 1.0, "g": 1.0, "b": 1.0},
             "specular": {"r": 1.0, "g": 1.0, "b": 1.0},
             "shininess": 32.0,
             "transparency": 0.0,
-            "ior": 1.0
+            "ior": 1.0,
+            "texture": None
         }
 
     mat = obj.data.materials[0]  # Take the first material for simplicity
@@ -112,14 +113,19 @@ def get_material_data(obj):
     shininess = 32.0
     transparency = 0.0
     ior = 1.0
+    texture_path = None
 
     if mat.node_tree:
         for node in mat.node_tree.nodes:
             if node.type == 'BSDF_PRINCIPLED':
                 # Diffuse color
+
                 if 'Base Color' in node.inputs:
-                    base_color = node.inputs['Base Color'].default_value
+                    colour_node = node.inputs['Base Color']
+                    base_color = colour_node.default_value
                     diffuse = {"r": base_color[0], "g": base_color[1], "b": base_color[2]}
+                    texture_path = get_material_texture(mat)
+
                 
                 # Specular intensity (scalar)
                 if 'Specular' in node.inputs:
@@ -147,9 +153,21 @@ def get_material_data(obj):
         "specular": specular,
         "shininess": shininess,
         "transparency": transparency,
-        "ior": ior
+        "ior": ior,
+        "texture": texture_path if texture_path else None
     }
 
+
+def get_material_texture(mat):
+    """Return the filepath of the first Image Texture node in the material, if any."""
+    if not mat.node_tree:
+        return None
+
+    for node in mat.node_tree.nodes:
+        if node.type == 'TEX_IMAGE' and node.image:
+            # Return absolute path
+            return os.path.basename(node.image.filepath_raw) or node.image.name
+    return None
 
 
 def export_to_json():

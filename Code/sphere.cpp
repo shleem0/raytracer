@@ -9,6 +9,8 @@
 #include "sphere.h"
 #include "ray.h"
 #include "hit_struct.h"
+#include "raytracer.h"
+#include "image.h"
 
 using namespace std;
 
@@ -67,29 +69,37 @@ vector<Sphere> Sphere::parseSphereDataFromJson() {
 
         //Parse location
         string locationStr = getJSONObject(sphereDataStr, "\"location\"");
-        newSphere.location[0] = getFloat(locationStr, "\"x\"");
-        newSphere.location[1] = getFloat(locationStr, "\"y\"");
-        newSphere.location[2] = getFloat(locationStr, "\"z\"");
+        newSphere.location = {getFloat(locationStr, "\"x\""),
+        getFloat(locationStr, "\"y\""),
+        getFloat(locationStr, "\"z\"")};
 
         //Parse radius
         newSphere.radius = getFloat(sphereDataStr, "\"radius\"");
 
         //Parse material data
         string materialStr = getJSONObject(sphereDataStr, "\"material\"");
-        newSphere.diffuse[0] = getFloat(materialStr, "\"r\"");
-        newSphere.diffuse[1] = getFloat(materialStr, "\"g\"");
-        newSphere.diffuse[2] = getFloat(materialStr, "\"b\"");
+        
+        string diffStr = getJSONObject(materialStr, "\"diffuse\"");
+        newSphere.diffuse = {getFloat(diffStr, "\"r\""),
+        getFloat(diffStr, "\"g\""),
+        getFloat(diffStr, "\"b\"")};
 
-        string specStr = getJSONObject(sphereDataStr, "\"specular\"");
-        newSphere.specular[0] = getFloat(materialStr, "\"r\"");
-        newSphere.specular[1] = getFloat(materialStr, "\"g\"");
-        newSphere.specular[2] = getFloat(materialStr, "\"b\"");
+        string specStr = getJSONObject(materialStr, "\"specular\"");
+        newSphere.specular = {getFloat(specStr, "\"r\""),
+        getFloat(specStr, "\"g\""),
+        getFloat(specStr, "\"b\"")};
 
-        newSphere.shininess = getFloat(sphereDataStr, "\"shininess\"");
+        newSphere.shininess = getFloat(materialStr, "\"shininess\"");
 
-        newSphere.transparency = getFloat(sphereDataStr, "\"transparency\"");
+        newSphere.transparency = getFloat(materialStr, "\"transparency\"");
 
-        newSphere.ior = getFloat(sphereDataStr, "\"ior\"");
+        newSphere.ior = getFloat(materialStr, "\"ior\"");
+
+        newSphere.texture = getString(materialStr, "\"texture\"");
+        if (newSphere.texture != ""){
+            newSphere.hasTex = true;
+            cout << "Sphere " << i << " texture: " << newSphere.texture << "\n";
+        }
 
         spheres.push_back(newSphere);
     }
@@ -123,6 +133,18 @@ bool Sphere::intersect(const Ray& ray, HitStructure& hs){
     if (t < 0) return false;
 
     vector<float> intersectPoint = {ray.origin[0] + t * ray.direction[0], ray.origin[1] + t * ray.direction[1], ray.origin[2] + t * ray.direction[2]};
+
+    if (hasTex){
+        //Get hit point on texture for texture mapping
+        vector<float> normal = Raytracer::normalise(Raytracer::sub_vec(intersectPoint, location));
+        float u = 0.5f + atan2(normal[2], normal[0]) / (2 * M_PI);
+        float v = 0.5f - asin(normal[1]) / M_PI;
+
+        hs.u = u;
+        hs.v = v;
+        hs.textureFile = texture;
+        hs.hasTex = true;
+    }
 
     hs.hitPoint = intersectPoint;
     hs.normal = {(intersectPoint[0] - location[0]) / radius, (intersectPoint[1] - location[1]) / radius, (intersectPoint[2] - location[2]) / radius};

@@ -63,9 +63,9 @@ vector<PointLight> PointLight::parseLightDataFromJson() {
 
         //Parse location
         string locationStr = getJSONObject(lightDataStr, "\"location\"");
-        newLight.location[0] = getFloat(locationStr, "\"x\"");
-        newLight.location[1] = getFloat(locationStr, "\"y\"");
-        newLight.location[2] = getFloat(locationStr, "\"z\"");
+        newLight.location = {getFloat(locationStr, "\"x\""),
+        getFloat(locationStr, "\"y\""),
+        getFloat(locationStr, "\"z\"")};
 
         //Parse radiant intensity
         newLight.rad_intensity = getFloat(lightDataStr, "\"radiant_intensity\"");

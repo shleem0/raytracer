@@ -35,6 +35,43 @@ float Shape::getFloat(const string& str, const string& key) {
     return stof(str.substr(start, end - start));
 }
 
+
+ string Shape::getString(const string& str, const string& key) {
+    
+    size_t pos = str.find(key);
+    if (pos == string::npos) {
+        throw runtime_error("Key not found in JSON string");
+    }
+
+    size_t start = str.find(':', pos);
+    if (start == string::npos) {
+        throw runtime_error("Invalid JSON string");
+    }
+
+    // Move just past colon and skip whitespace
+    start = str.find_first_not_of(" \t\n\r", start + 1);
+    if (start == string::npos) {
+        return "";
+    }
+
+    // Case 1: null value
+    if (str.compare(start, 4, "null") == 0) {
+        return "";
+    }
+
+    // Case 2: quoted string value
+    if (str[start] == '"') {
+        size_t end = str.find('"', start + 1);
+        if (end == string::npos) {
+            throw runtime_error("Unterminated string value in JSON");
+        }
+        return str.substr(start + 1, end - start - 1);
+    }
+
+    // Otherwise unsupported format → return empty
+    return "";
+}
+
 //Function to get a JSON object value from a JSON string
 string Shape::getJSONObject(const string& str, const string& key) {
     size_t pos = str.find(key);
@@ -44,7 +81,12 @@ string Shape::getJSONObject(const string& str, const string& key) {
 
     size_t start = str.find('{', pos);
     if (start == string::npos) {
-        throw runtime_error("Invalid JSON string");
+        if (key == "\"texture\""){
+            return "";
+        }
+        else{
+            throw runtime_error("Invalid JSON string");
+        }
     }
 
     size_t end = start;

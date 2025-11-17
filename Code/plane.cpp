@@ -11,6 +11,8 @@
 #include "plane.h"
 #include "ray.h"
 #include "hit_struct.h"
+#include "raytracer.h"
+#include "image.h"
 
 using namespace std;
 
@@ -105,20 +107,28 @@ vector<Plane> Plane::parsePlaneDataFromJson() {
 
         //Parse material data
         string materialStr = getJSONObject(planeDataStr, "\"material\"");
-        newPlane.diffuse[0] = getFloat(materialStr, "\"r\"");
-        newPlane.diffuse[1] = getFloat(materialStr, "\"g\"");
-        newPlane.diffuse[2] = getFloat(materialStr, "\"b\"");
 
-        string specStr = getJSONObject(planeDataStr, "\"specular\"");
-        newPlane.specular[0] = getFloat(materialStr, "\"r\"");
-        newPlane.specular[1] = getFloat(materialStr, "\"g\"");
-        newPlane.specular[2] = getFloat(materialStr, "\"b\"");
+        string diffStr = getJSONObject(materialStr, "\"diffuse\"");
+        newPlane.diffuse = {getFloat(diffStr, "\"r\""),
+        getFloat(diffStr, "\"g\""),
+        getFloat(diffStr, "\"b\"")};
 
-        newPlane.shininess = getFloat(planeDataStr, "\"shininess\"");
+        string specStr = getJSONObject(materialStr, "\"specular\"");
+        newPlane.specular = {getFloat(specStr, "\"r\""),
+        getFloat(specStr, "\"g\""),
+        getFloat(specStr, "\"b\"")};
 
-        newPlane.transparency = getFloat(planeDataStr, "\"shininess\"");
+        newPlane.shininess = getFloat(materialStr, "\"shininess\"");
 
-        newPlane.ior = getFloat(planeDataStr, "\"ior\"");
+        newPlane.transparency = getFloat(materialStr, "\"transparency\"");
+
+        newPlane.ior = getFloat(materialStr, "\"ior\"");
+
+        newPlane.texture = getString(materialStr, "\"texture\"");
+        if (newPlane.texture != ""){
+            newPlane.hasTex = true;
+            cout << "Plane " << i << " texture: " << newPlane.texture << "\n";
+        }
 
         planes.push_back(newPlane);
     }
@@ -145,6 +155,31 @@ bool Plane::intersect(const Ray& ray, HitStructure& hs){
     bool inPolygon = pointInsidePolygon(intersectPoint);
 
     if (inPolygon){
+
+        //Get hit point on texture for texture mapping
+        if (hasTex){
+            vector<float> uSide = Raytracer::sub_vec(vertices[1], vertices[0]);
+            float uSide_len = sqrt(pow(uSide[0], 2) + pow(uSide[1], 2) + pow(uSide[2], 2));
+            vector<float> uAxis = Raytracer::normalise(uSide);
+
+            vector<float> vSide = Raytracer::sub_vec(vertices.back(), vertices[0]);
+            float vSide_len = sqrt(pow(vSide[0], 2) + pow(vSide[1], 2) + pow(vSide[2], 2));
+            vector<float> vAxis = Raytracer::normalise(vSide);
+
+            vector<float> local = Raytracer::sub_vec(intersectPoint, vertices[0]);
+
+            float u = Raytracer::dotProd(local, uAxis) / uSide_len;
+            float v = Raytracer::dotProd(local, vAxis) / vSide_len;
+
+            u = fmod(max(u,0.0f), 1.0f);
+            v = fmod(max(v,0.0f), 1.0f);
+
+            hs.u = u;
+            hs.v = v;
+            hs.textureFile = texture;
+            hs.hasTex = true;
+        }
+
         hs.hitPoint = intersectPoint;
         hs.rayDistance = sqrt(pow(ray.origin[0] - intersectPoint[0], 2) + pow(ray.origin[1] - intersectPoint[1], 2) + pow(ray.origin[2] - intersectPoint[2], 2 ));
         hs.normal = normal;

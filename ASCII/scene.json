@@ -31,11 +31,11 @@
         "point_lights": [
             {
                 "location": {
-                    "x": -5.0,
+                    "x": 5.0,
                     "y": 0.0,
-                    "z": 3.0
+                    "z": 5.0
                 },
-                "radiant_intensity": 500.0
+                "radiant_intensity": 1000.0
             }
         ],
         "spheres": [
@@ -59,7 +59,8 @@
                     },
                     "shininess": 64.0,
                     "transparency": 0.0,
-                    "ior": 1.5
+                    "ior": 1.5,
+                    "texture": null
                 }
             }
         ],
@@ -78,18 +79,19 @@
                 "scale": 1.0,
                 "material": {
                     "diffuse": {
-                        "r": 0.8002041578292847,
-                        "g": 0.0293778907507658,
-                        "b": 0.0
+                        "r": 0.800000011920929,
+                        "g": 0.800000011920929,
+                        "b": 0.800000011920929
                     },
                     "specular": {
                         "r": 1.0,
                         "g": 1.0,
                         "b": 1.0
                     },
-                    "shininess": 128.0,
+                    "shininess": 64.0,
                     "transparency": 0.0,
-                    "ior": 1.5
+                    "ior": 1.5,
+                    "texture": "checkerboard.ppm"
                 }
             }
         ],
@@ -128,9 +130,10 @@
                         "g": 1.0,
                         "b": 1.0
                     },
-                    "shininess": 64.0,
+                    "shininess": 24.888885498046875,
                     "transparency": 0.0,
-                    "ior": 1.5
+                    "ior": 1.5,
+                    "texture": "checkerboard.ppm"
                 }
             }
         ]

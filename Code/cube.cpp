@@ -10,6 +10,7 @@
 #include "ray.h"
 #include "hit_struct.h"
 #include "aabb.h"
+#include "image.h"
 
 using namespace std;
 
@@ -68,15 +69,15 @@ vector<Cube> Cube::parseCubeDataFromJson() {
 
         //Parse location
         string locationStr = getJSONObject(cubeDataStr, "\"translation\"");
-        newCube.location[0] = getFloat(locationStr, "\"x\"");
-        newCube.location[1] = getFloat(locationStr, "\"y\"");
-        newCube.location[2] = getFloat(locationStr, "\"z\"");
+        newCube.location = {getFloat(locationStr, "\"x\""),
+        getFloat(locationStr, "\"y\""),
+        getFloat(locationStr, "\"z\"")};
 
         //Parse rotation
         string rotationStr = getJSONObject(cubeDataStr, "\"rotation\"");
-        newCube.rotation[0] = getFloat(rotationStr, "\"x\"");
-        newCube.rotation[1] = getFloat(rotationStr, "\"y\"");
-        newCube.rotation[2] = getFloat(rotationStr, "\"z\"");
+        newCube.rotation = {getFloat(rotationStr, "\"x\""),
+        getFloat(rotationStr, "\"y\""),
+        getFloat(rotationStr, "\"z\"")};
 
         //Parse 1D scale
         newCube.scale = getFloat(cubeDataStr, "\"scale\"");
@@ -84,20 +85,28 @@ vector<Cube> Cube::parseCubeDataFromJson() {
 
         //Parse material data
         string materialStr = getJSONObject(cubeDataStr, "\"material\"");
-        newCube.diffuse[0] = getFloat(materialStr, "\"r\"");
-        newCube.diffuse[1] = getFloat(materialStr, "\"g\"");
-        newCube.diffuse[2] = getFloat(materialStr, "\"b\"");
 
-        string specStr = getJSONObject(cubeDataStr, "\"specular\"");
-        newCube.specular[0] = getFloat(materialStr, "\"r\"");
-        newCube.specular[1] = getFloat(materialStr, "\"g\"");
-        newCube.specular[2] = getFloat(materialStr, "\"b\"");
+        string diffStr = getJSONObject(materialStr, "\"diffuse\"");
+        newCube.diffuse = {getFloat(diffStr, "\"r\""),
+        getFloat(diffStr, "\"g\""),
+        getFloat(diffStr, "\"b\"")};
 
-        newCube.shininess = getFloat(cubeDataStr, "\"shininess\"");
+        string specStr = getJSONObject(materialStr, "\"specular\"");
+        newCube.specular = {getFloat(specStr, "\"r\""),
+        getFloat(specStr, "\"g\""),
+        getFloat(specStr, "\"b\"")};
 
-        newCube.transparency = getFloat(cubeDataStr, "\"transparency\"");
+        newCube.shininess = getFloat(materialStr, "\"shininess\"");
 
-        newCube.ior = getFloat(cubeDataStr, "\"ior\"");
+        newCube.transparency = getFloat(materialStr, "\"transparency\"");
+
+        newCube.ior = getFloat(materialStr, "\"ior\"");
+
+        newCube.texture = getString(materialStr, "\"texture\"");
+        if (newCube.texture != ""){
+            cout << "Cube " << i << " texture: " << newCube.texture << "\n";
+            newCube.hasTex = true;
+        }
 
         cubes.push_back(newCube);
     }
@@ -118,16 +127,12 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs){
 
     //Inverse rotate
     vector<float> o = {local.origin[0], local.origin[1], local.origin[2]};
-    vector<float> d = {local.direction[0], local.direction[1], local.direction[2]};
+    vector<float> d = {local.direction[0]/scale, local.direction[1]/scale, local.direction[2]/scale};
     rotateXYZInverse(o, rotation);
     rotateXYZInverse(d, rotation);
-    local.origin[0] = o[0]/scale;
-    local.origin[1] = o[1]/scale;
-    local.origin[2] = o[2]/scale;
+    local.origin = {o[0]/scale, o[1]/scale, o[2]/scale};
 
-    local.direction[0] = d[0]/scale;
-    local.direction[1] = d[1]/scale;
-    local.direction[2] = d[2]/scale;
+    local.direction = d;
 
     //Intersect with local AABB (-1 to 1)
     float tmin = -INFINITY, tmax = INFINITY;
@@ -154,16 +159,89 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs){
         local.origin[2] + t * local.direction[2]
     };
 
-    vector<float> normalLocal = {0,0,0};
+    vector<float> normalLocal = {0.0f, 0.0f, 0.0f};
+    float eps = 1e-5f;
     float absX = fabs(hitLocal[0]);
     float absY = fabs(hitLocal[1]);
     float absZ = fabs(hitLocal[2]);
-    if (absX > absY && absX > absZ)
-        normalLocal[0] = (hitLocal[0] > 0) ? 1 : -1;
-    else if (absY > absZ)
-        normalLocal[1] = (hitLocal[1] > 0) ? 1 : -1;
+
+    if (absX >= absY - eps && absX >= absZ - eps)
+        normalLocal[0] = (hitLocal[0] > 0) ? 1.0f : -1.0f;
+    else if (absY >= absX - eps && absY >= absZ - eps)
+        normalLocal[1] = (hitLocal[1] > 0) ? 1.0f : -1.0f;
     else
-        normalLocal[2] = (hitLocal[2] > 0) ? 1 : -1;
+        normalLocal[2] = (hitLocal[2] > 0) ? 1.0f : -1.0f;
+
+        
+    if (hasTex){
+        float u = 0.0f, v = 0.0f;
+
+        // Determine dominant face axis robustly (choose the largest absolute component)
+        float ax = fabs(hitLocal[0]);
+        float ay = fabs(hitLocal[1]);
+        float az = fabs(hitLocal[2]);
+
+        // choose the axis with the maximum absolute value
+        float maxA = max(ax, max(ay, az));
+
+        if (ax >= maxA - eps) {
+            // X faces
+            if (hitLocal[0] > 0.0f) {
+                // +X
+                u = ( hitLocal[2] + 1.0f ) * 0.5f;
+                v = ( hitLocal[1] + 1.0f ) * 0.5f;
+            } else {
+                // -X
+                // flip u so texture orientation is consistent
+                u = ( 1.0f - hitLocal[2] ) * 0.5f;
+                v = ( hitLocal[1] + 1.0f ) * 0.5f;
+            }
+        }
+        else if (ay >= maxA - eps) {
+            // Y faces
+            if (hitLocal[1] > 0.0f) {
+                // +Y
+                u = ( hitLocal[0] + 1.0f ) * 0.5f;
+                v = ( hitLocal[2] + 1.0f ) * 0.5f;
+            } else {
+                // -Y
+                u = ( hitLocal[0] + 1.0f ) * 0.5f;
+                v = ( 1.0f - hitLocal[2] ) * 0.5f;
+            }
+        }
+        else {
+            // Z faces
+            if (hitLocal[2] > 0.0f) {
+                // +Z
+                u = ( hitLocal[0] + 1.0f ) * 0.5f;
+                v = ( hitLocal[1] + 1.0f ) * 0.5f;
+            } else {
+                // -Z
+                u = ( 1.0f - hitLocal[0] ) * 0.5f;
+                v = ( hitLocal[1] + 1.0f ) * 0.5f;
+            }
+        }
+
+        // Wrap/normalize UVs into [0,1) safely
+        u = fmodf(u, 1.0f);
+        v = fmodf(v, 1.0f);
+        if (u < 0.0f) u += 1.0f;
+        if (v < 0.0f) v += 1.0f;
+
+        // (optional) clamp tiny numerical issues
+        if (u < 0.0f) u = 0.0f;
+        if (u > 1.0f) u = 1.0f;
+        if (v < 0.0f) v = 0.0f;
+        if (v > 1.0f) v = 1.0f;
+
+        hs.u = u;
+        hs.v = v;
+
+        hs.hasTex = true;
+        hs.textureFile = texture;
+    }
+
+
 
     //Transform back to world space
     vector<float> hitWorld = {
@@ -180,13 +258,13 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs){
     float len = sqrt(normalLocal[0]*normalLocal[0] +
                           normalLocal[1]*normalLocal[1] +
                           normalLocal[2]*normalLocal[2]);
-    for (int i = 0; i < 3; i++)
-        normalLocal[i] /= len;
+    for (int i = 0; i < 3; i++){
+        normalLocal[i] /= len;}
 
     //Write result
     hs.hitPoint = {hitWorld[0], hitWorld[1], hitWorld[2]};
     hs.normal = normalLocal;
-    hs.rayDistance = t * scale;
+    hs.rayDistance = t;
     hs.diffuse = {diffuse[0], diffuse[1], diffuse[2]};
     hs.specular = {specular[0], specular[1], specular[2]};
     hs.shininess = shininess;
@@ -199,7 +277,7 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs){
 
 //Helper functions
 
-void Cube::rotateXYZ(vector<float>& v, float rot[3]) {
+void Cube::rotateXYZ(vector<float>& v, vector<float>& rot) {
     float x = v[0], y = v[1], z = v[2];
 
     //X rotation
@@ -222,8 +300,8 @@ void Cube::rotateXYZ(vector<float>& v, float rot[3]) {
     v[0] = x3; v[1] = y3; v[2] = z2;
 }
 
-void Cube::rotateXYZInverse(vector<float>& v, float rot[3]) {
-    float inv[3] = {-rot[0], -rot[1], -rot[2]};
+void Cube::rotateXYZInverse(vector<float>& v, vector<float>& rot) {
+    vector<float> inv = {-rot[0], -rot[1], -rot[2]};
     rotateXYZ(v, inv);
 }
 

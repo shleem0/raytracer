@@ -8,7 +8,7 @@ using namespace std;
 
 class PointLight{
     public:
-        float location[3];
+        vector<float> location;
         float rad_intensity;
 
         static vector<PointLight> parseLightDataFromJson();

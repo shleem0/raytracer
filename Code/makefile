@@ -7,7 +7,7 @@ SRCS = camera.cpp image.cpp shape.cpp sphere.cpp cube.cpp plane.cpp pointlight.c
 OBJS = $(SRCS:.cpp=.o)
 
 # Default rule to build and run the executable
-all: $(TARGET) run
+#all: $(TARGET) run
 
 # Rule to link object files into the target executable
 $(TARGET): $(OBJS)

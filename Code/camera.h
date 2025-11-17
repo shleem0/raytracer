@@ -10,8 +10,8 @@ using namespace std;
 //Class for a Blender camera object
 class Camera{
     public:
-        float location[3];
-        float gaze_vector[3];
+        vector<float> location;
+        vector<float> gaze_vector;
         float focal_length;
         float sensor_width;
         float sensor_height;

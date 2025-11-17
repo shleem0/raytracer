@@ -11,6 +11,7 @@ Image::Image(const string& fileName){
 
 
 void Image::readImage() {
+
     ifstream fileStream("../Textures/" + file);
 
     if (!fileStream.is_open()) {

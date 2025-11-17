@@ -3,21 +3,28 @@
 
 #include "ray.h"
 #include "hit_struct.h"
+#include "image.h"
+#include <vector>
+#include <string>
 
 using namespace std;
 
 //Superclass to represent a generic shape in a Blender scene
 class Shape{
     public:
-        float location[3];
-        float diffuse[3];
-        float specular[3];
+        vector<float> location;
+        vector<float> diffuse;
+        vector<float> specular;
         float shininess;
         float transparency;
         float ior;
+        string texture;
+        bool hasTex = false;
 
         //Parse a float value from a JSON object
         static float getFloat(const string&, const string&);
+
+        static string getString(const string&, const string&);
 
         //Parse a string value from a JSON object
         static string getJSONObject(const string&, const string&);

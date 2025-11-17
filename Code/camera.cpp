@@ -66,15 +66,15 @@ vector<Camera> Camera::parseCameraDataFromJson() {
 
         //Parse location
         string locationStr = getJSONObject(cameraDataStr, "\"location\"");
-        newCam.location[0] = getFloat(locationStr, "\"x\"");
-        newCam.location[1] = getFloat(locationStr, "\"y\"");
-        newCam.location[2] = getFloat(locationStr, "\"z\"");
+        newCam.location = {getFloat(locationStr, "\"x\""),
+        getFloat(locationStr, "\"y\""),
+        getFloat(locationStr, "\"z\"")};
 
         //Parse gaze vector
         string gazeVectorStr = getJSONObject(cameraDataStr, "\"gaze_vector\"");
-        newCam.gaze_vector[0] = getFloat(gazeVectorStr, "\"x\"");
-        newCam.gaze_vector[1] = getFloat(gazeVectorStr, "\"y\"");
-        newCam.gaze_vector[2] = getFloat(gazeVectorStr, "\"z\"");
+        newCam.gaze_vector = {getFloat(gazeVectorStr, "\"x\""),
+        getFloat(gazeVectorStr, "\"y\""),
+        getFloat(gazeVectorStr, "\"z\"")};
 
         //Parse focal length
         newCam.focal_length = getFloat(cameraDataStr, "\"focal_length\"") / 1000.0f;

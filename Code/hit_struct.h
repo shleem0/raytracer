@@ -18,6 +18,10 @@ struct HitStructure{
     float transparency;
     float ior;
     string objectType;
+
+    float u, v;
+    bool hasTex = false;
+    string textureFile;
 };
 
 #endif
