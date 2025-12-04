@@ -5,6 +5,7 @@
 #include "ray.h"
 #include "hit_struct.h"
 #include "aabb.h"
+#include "config.h"
 #include <string>
 
 using namespace std;
@@ -15,10 +16,10 @@ class Sphere : public Shape{
         float radius;
 
         //Parse all sphere data from the scene's JSON
-        static vector<Sphere> parseSphereDataFromJson();
+        static vector<Sphere> parseSphereDataFromJson(Config);
 
         //Check if a ray intersects with a sphere
-        bool intersect(const Ray&, HitStructure&) override;
+        bool intersect(const Ray&, HitStructure&, Config) override;
 
         //Get sphere's AABB
         AABB getAABB() const;

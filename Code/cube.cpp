@@ -11,11 +11,13 @@
 #include "hit_struct.h"
 #include "aabb.h"
 #include "image.h"
+#include "config.h"
+#include "raytracer.h"
 
 using namespace std;
 
 //Overarching function for parsing cube data from JSON
-vector<Cube> Cube::parseCubeDataFromJson() {
+vector<Cube> Cube::parseCubeDataFromJson(Config config) {
     //Open JSON file
     ifstream jsonFile("..\\ASCII\\scene.json");
     if (!jsonFile) {
@@ -67,11 +69,16 @@ vector<Cube> Cube::parseCubeDataFromJson() {
         //Extract the current cube
         string cubeDataStr = cubeObjects[i];
 
-        //Parse location
-        string locationStr = getJSONObject(cubeDataStr, "\"translation\"");
-        newCube.location = {getFloat(locationStr, "\"x\""),
-        getFloat(locationStr, "\"y\""),
-        getFloat(locationStr, "\"z\"")};
+        //Parse start and end locations
+        string startLocationStr = getJSONObject(cubeDataStr, "\"start_location\"");
+        newCube.startLocation = {getFloat(startLocationStr, "\"x\""),
+        getFloat(startLocationStr, "\"y\""),
+        getFloat(startLocationStr, "\"z\"")};
+
+        string endLocationStr = getJSONObject(cubeDataStr, "\"end_location\"");
+        newCube.endLocation = {getFloat(endLocationStr, "\"x\""),
+        getFloat(endLocationStr, "\"y\""),
+        getFloat(endLocationStr, "\"z\"")};
 
         //Parse rotation
         string rotationStr = getJSONObject(cubeDataStr, "\"rotation\"");
@@ -103,7 +110,7 @@ vector<Cube> Cube::parseCubeDataFromJson() {
         newCube.ior = getFloat(materialStr, "\"ior\"");
 
         newCube.texture = getString(materialStr, "\"texture\"");
-        if (newCube.texture != ""){
+        if (newCube.texture != "" && config.textures){
             cout << "Cube " << i << " texture: " << newCube.texture << "\n";
             newCube.hasTex = true;
         }
@@ -116,28 +123,41 @@ vector<Cube> Cube::parseCubeDataFromJson() {
 
 
 
-bool Cube::intersect(const Ray& ray, HitStructure& hs){
+bool Cube::intersect(const Ray& ray, HitStructure& hs, Config config){
+
+    vector<float> location;
+
+    //Get intersection based on object position for motion blur
+    if (config.motionBlur){
+        location = this->positionAt(ray.time);
+    }
+    else{
+        location = startLocation;
+    }
+
     //Transform ray into local space
     Ray local = ray;
 
     //Translate
-    local.origin[0] -= location[0];
-    local.origin[1] -= location[1];
-    local.origin[2] -= location[2];
+    local.origin = Raytracer::sub_vec(local.origin, location);
 
     //Inverse rotate
     vector<float> o = {local.origin[0], local.origin[1], local.origin[2]};
-    vector<float> d = {local.direction[0]/scale, local.direction[1]/scale, local.direction[2]/scale};
+    vector<float> d = {local.direction[0], local.direction[1], local.direction[2]};
+    
     rotateXYZInverse(o, rotation);
     rotateXYZInverse(d, rotation);
-    local.origin = {o[0]/scale, o[1]/scale, o[2]/scale};
 
-    local.direction = d;
+    local.origin = Raytracer::mul_vec(o, 1.0f / scale);
+    local.direction = Raytracer::mul_vec(d, 1.0f / scale);
+
+    local.direction = Raytracer::normalise(local.direction);
+
 
     //Intersect with local AABB (-1 to 1)
     float tmin = -INFINITY, tmax = INFINITY;
     for (int i = 0; i < 3; i++) {
-        if (fabs(local.direction[i]) < 1e-6f) {
+        if (fabs(local.direction[i]) < 1e-5f) {
             if (local.origin[i] < -1 || local.origin[i] > 1) return false;
         } else {
             float t1 = (-1 - local.origin[i]) / local.direction[i];
@@ -149,15 +169,17 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs){
         }
     }
 
-    float t = (tmin > 0) ? tmin : tmax;
-    if (t < 0) return false;
+    const float T_EPS = 1e-5f;
+
+    float t = -1.0f;
+    if (tmin > T_EPS)       t = tmin;
+    else if (tmax > T_EPS)  t = tmax;
+
+    if (t < 0.0f) return false;
+
 
     //Compute hit point and normal (local)
-    vector<float> hitLocal= {
-        local.origin[0] + t * local.direction[0],
-        local.origin[1] + t * local.direction[1],
-        local.origin[2] + t * local.direction[2]
-    };
+    vector<float> hitLocal = Raytracer::add_vec(local.origin, Raytracer::mul_vec(local.direction, t));
 
     vector<float> normalLocal = {0.0f, 0.0f, 0.0f};
     float eps = 1e-5f;
@@ -176,7 +198,7 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs){
     if (hasTex){
         float u = 0.0f, v = 0.0f;
 
-        // Determine dominant face axis robustly (choose the largest absolute component)
+        //Determine dominant face axis robustly (choose the largest absolute component)
         float ax = fabs(hitLocal[0]);
         float ay = fabs(hitLocal[1]);
         float az = fabs(hitLocal[2]);
@@ -222,13 +244,13 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs){
             }
         }
 
-        // Wrap/normalize UVs into [0,1) safely
+        //Clamping to [0, 1)
         u = fmodf(u, 1.0f);
         v = fmodf(v, 1.0f);
         if (u < 0.0f) u += 1.0f;
         if (v < 0.0f) v += 1.0f;
 
-        // (optional) clamp tiny numerical issues
+        //Clamping
         if (u < 0.0f) u = 0.0f;
         if (u > 1.0f) u = 1.0f;
         if (v < 0.0f) v = 0.0f;
@@ -241,35 +263,33 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs){
         hs.textureFile = texture;
     }
 
-
-
     //Transform back to world space
-    vector<float> hitWorld = {
-        hitLocal[0] * scale,
-        hitLocal[1] * scale,
-        hitLocal[2] * scale
-    };
+    vector<float> hitWorld = Raytracer::mul_vec(hitLocal, scale);
     rotateXYZ(hitWorld, rotation);
-    hitWorld[0] += location[0];
-    hitWorld[1] += location[1];
-    hitWorld[2] += location[2];
+    hitWorld = Raytracer::add_vec(hitWorld, location);
+
+    vector<float> vecToHit = Raytracer::sub_vec(hitWorld, ray.origin);
+
+    float worldT = Raytracer::dotProd(vecToHit, ray.direction);
+
+    const float WORLD_T_EPS = 1e-6f;
+    if (worldT < WORLD_T_EPS) worldT = WORLD_T_EPS;
 
     rotateXYZ(normalLocal, rotation);
-    float len = sqrt(normalLocal[0]*normalLocal[0] +
-                          normalLocal[1]*normalLocal[1] +
-                          normalLocal[2]*normalLocal[2]);
-    for (int i = 0; i < 3; i++){
-        normalLocal[i] /= len;}
+    normalLocal = Raytracer::normalise(normalLocal);
 
     //Write result
     hs.hitPoint = {hitWorld[0], hitWorld[1], hitWorld[2]};
     hs.normal = normalLocal;
-    hs.rayDistance = t;
+    hs.rayDistance = worldT;
     hs.diffuse = {diffuse[0], diffuse[1], diffuse[2]};
     hs.specular = {specular[0], specular[1], specular[2]};
     hs.shininess = shininess;
     hs.transparency = transparency;
     hs.ior = ior;
+    if (ray.time){
+        hs.time = ray.time;
+    }
 
     return true;
 }
@@ -277,7 +297,7 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs){
 
 //Helper functions
 
-void Cube::rotateXYZ(vector<float>& v, vector<float>& rot) {
+void Cube::rotateXYZ(vector<float>& v, const vector<float>& rot) const{
     float x = v[0], y = v[1], z = v[2];
 
     //X rotation
@@ -300,13 +320,48 @@ void Cube::rotateXYZ(vector<float>& v, vector<float>& rot) {
     v[0] = x3; v[1] = y3; v[2] = z2;
 }
 
-void Cube::rotateXYZInverse(vector<float>& v, vector<float>& rot) {
-    vector<float> inv = {-rot[0], -rot[1], -rot[2]};
-    rotateXYZ(v, inv);
+void Cube::rotateXYZInverse(vector<float>& v, const vector<float>& rot) const{
+    float ix = -rot[0];
+    float iy = -rot[1];
+    float iz = -rot[2];
+
+    //Z inverse
+    {
+        float x = v[0], y = v[1];
+        float cz = cos(iz), sz = sin(iz);
+        float xz = x * cz - y * sz;
+        float yz = x * sz + y * cz;
+        v[0] = xz; v[1] = yz;
+    }
+
+    //Y inverse
+    {
+        float x = v[0], z = v[2];
+        float cy = cos(iy), sy = sin(iy);
+        float xy = x * cy + z * sy;
+        float zy = -x * sy + z * cy;
+        v[0] = xy; v[2] = zy;
+    }
+
+    //X inverse
+    {
+        float y = v[1], z = v[2];
+        float cx = cos(ix), sx = sin(ix);
+        float yx = y * cx - z * sx;
+        float zx = y * sx + z * cx;
+        v[1] = yx; v[2] = zx;
+    }
 }
 
-AABB Cube::getAABB() const {
-    vector<float> min = {location[0] - scale, location[1] - scale, location[2] - scale};
-    vector<float> max = {location[0] + scale, location[1] + scale, location[2] + scale};
-    return AABB(min, max);
+
+AABB Cube::getAABB(bool motionBlur) const {
+
+    vector<float> startMin = {startLocation[0] - scale, startLocation[1] - scale, startLocation[2] - scale};
+    vector<float> startMax = {startLocation[0] + scale, startLocation[1] + scale, startLocation[2] + scale};
+    
+    vector<float> endMin = {endLocation[0] - scale, endLocation[1] - scale, endLocation[2] - scale};
+    vector<float> endMax = {endLocation[0] + scale, endLocation[1] + scale, endLocation[2] + scale};
+
+    AABB fullAABB = AABB::unionOf(AABB(startMin, startMax), AABB(endMin, endMax));
+    return fullAABB;
 }

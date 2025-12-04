@@ -7,12 +7,13 @@
 #include "camera.h"
 #include "ray.h"
 #include "shape.h"
+#include "raytracer.h"
 
 using namespace std;
 
 
 //Overarching function for parsing camera data from JSON
-vector<Camera> Camera::parseCameraDataFromJson() {
+vector<Camera> Camera::parseCameraDataFromJson(Config config) {
     //Open JSON file
     ifstream jsonFile("..\\ASCII\\scene.json");
     if (!jsonFile) {
@@ -76,8 +77,17 @@ vector<Camera> Camera::parseCameraDataFromJson() {
         getFloat(gazeVectorStr, "\"y\""),
         getFloat(gazeVectorStr, "\"z\"")};
 
+        //Parse camera aperture
+        if (config.dof){
+            newCam.aperture = getFloat(cameraDataStr, "\"aperture\"");
+        }
+        else{
+            newCam.aperture = 0.0f;
+        }
+
         //Parse focal length
         newCam.focal_length = getFloat(cameraDataStr, "\"focal_length\"") / 1000.0f;
+        newCam.focal_distance = getFloat(cameraDataStr, "\"focal_distance\"");
 
         //Parse sensor width and height
         string sensorStr = getJSONObject(cameraDataStr, "\"sensor\"");
@@ -99,6 +109,7 @@ vector<Camera> Camera::parseCameraDataFromJson() {
 Ray Camera::convertPixelToRay(float x, float y) const {
 
     Ray ray;
+    ray.time = static_cast<float>(rand()) / RAND_MAX;
 
     //Normalize pixel coordinates [0,1]
     float u = (x + 0.5f) / res_x;
@@ -110,17 +121,13 @@ Ray Camera::convertPixelToRay(float x, float y) const {
     float cam_z = -1.0f; //Blender camera looks along -Z
 
     //Normalize forward
-    float len = sqrt(gaze_vector[0]*gaze_vector[0] +
-                        gaze_vector[1]*gaze_vector[1] +
-                        gaze_vector[2]*gaze_vector[2]);
-
-    float forward[3] = { gaze_vector[0]/len, gaze_vector[1]/len, gaze_vector[2]/len };
+    vector<float> forward = Raytracer::normalise(gaze_vector);
 
     //Compute right vector
-    float world_up[3] = {0.0f, 0.0f, 1.0f};
+    vector<float> world_up = {0.0f, 0.0f, 1.0f};
 
     // Standard right-handed camera: right = forward × world_up
-    float right[3] = {
+    vector<float> right = {
         forward[1]*world_up[2] - forward[2]*world_up[1],
         forward[2]*world_up[0] - forward[0]*world_up[2],
         forward[0]*world_up[1] - forward[1]*world_up[0]
@@ -134,12 +141,12 @@ Ray Camera::convertPixelToRay(float x, float y) const {
         right[0] = world_up[1]*forward[2] - world_up[2]*forward[1];
         right[1] = world_up[2]*forward[0] - world_up[0]*forward[2];
         right[2] = world_up[0]*forward[1] - world_up[1]*forward[0];
-        rlen = sqrt(right[0]*right[0] + right[1]*right[1] + right[2]*right[2]);
     }
-    right[0] /= rlen; right[1] /= rlen; right[2] /= rlen;
+
+    right = Raytracer::normalise(right);
 
     //Compute up vector
-    float up[3] = {
+    vector<float> up = {
         forward[1]*right[2] - forward[2]*right[1],
         forward[2]*right[0] - forward[0]*right[2],
         forward[0]*right[1] - forward[1]*right[0]
@@ -162,15 +169,31 @@ Ray Camera::convertPixelToRay(float x, float y) const {
                         ray.direction[2]*ray.direction[2]);
     }
 
-    ray.direction[0] /= dlen;
-    ray.direction[1] /= dlen;
-    ray.direction[2] /= dlen;
+    ray.direction = Raytracer::normalise(ray.direction);
 
     ray.direction[0] = -ray.direction[0];
     ray.direction[1] = -ray.direction[1];
     ray.direction[2] = -ray.direction[2];
     
     ray.origin = {location[0], location[1], location[2]};
+
+    //Adjust ray for depth of field
+    if (aperture > 0.0f){
+        float lens_radius = focal_length/(2.0f * aperture);
+
+        float sx, sy;
+        sampleDisk(sx, sy);
+
+        sx *= lens_radius;
+        sy *= lens_radius;
+
+        vector<float> lensOffset = Raytracer::add_vec(Raytracer::mul_vec(right, sx), Raytracer::mul_vec(up, sy));
+        vector<float> focusPoint = Raytracer::add_vec(ray.origin, Raytracer::mul_vec(ray.direction, focal_distance));
+
+        ray.origin = Raytracer::add_vec(ray.origin, lensOffset);
+
+        ray.direction = Raytracer::normalise(Raytracer::sub_vec(focusPoint, ray.origin));
+    }
 
     return ray;
 }
@@ -196,7 +219,7 @@ float Camera::getFloat(const string& str, const string& key) {
     }
 
     size_t end = start;
-    while (end < str.length() && isdigit(str[end]) || str[end] == '.' || str[end] == '-') {
+    while (end < str.length() && isdigit(str[end]) || str[end] == '.' || str[end] == '-' || str[end] == 'e') {
         end++;
     }
 
@@ -258,4 +281,32 @@ string Camera::getJSONArray(const string& str, const string& key) {
     }
 
     return str.substr(start, end - start); //includes outer [ ... ]
+}
+
+void Camera::sampleDisk(float &sx, float &sy){
+
+
+    // Map to [-1,1]
+    float x = 2.0f * (static_cast<float>(rand()) / RAND_MAX) - 1.0f;
+    float y = 2.0f * (static_cast<float>(rand()) / RAND_MAX) - 1.0f;
+
+    if (x == 0.0f && y == 0.0f) {
+        sx = 0.0f;
+        sy = 0.0f;
+        return;
+    }
+
+    float theta;
+    float r;
+    if (fabs(x) > fabs(y)){
+        r = x;
+        theta = (M_PI / 4.0f) * (y/x);
+    }
+    else{
+        r = y;
+        theta = (M_PI / 2.0f) - (M_PI / 4.0f) * (x / y);
+    }
+
+    sx = r * std::cos(theta);
+    sy = r * std::sin(theta);
 }

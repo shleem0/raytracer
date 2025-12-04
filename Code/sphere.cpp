@@ -11,11 +11,12 @@
 #include "hit_struct.h"
 #include "raytracer.h"
 #include "image.h"
+#include "config.h"
 
 using namespace std;
 
 //Overarching function for parsing sphere data from JSON
-vector<Sphere> Sphere::parseSphereDataFromJson() {
+vector<Sphere> Sphere::parseSphereDataFromJson(Config config) {
     //Open JSON file
     ifstream jsonFile("..\\ASCII\\scene.json");
     if (!jsonFile) {
@@ -68,8 +69,13 @@ vector<Sphere> Sphere::parseSphereDataFromJson() {
         string sphereDataStr = sphereObjects[i];
 
         //Parse location
-        string locationStr = getJSONObject(sphereDataStr, "\"location\"");
-        newSphere.location = {getFloat(locationStr, "\"x\""),
+        string locationStr = getJSONObject(sphereDataStr, "\"start_location\"");
+        newSphere.startLocation = {getFloat(locationStr, "\"x\""),
+        getFloat(locationStr, "\"y\""),
+        getFloat(locationStr, "\"z\"")};
+        
+        locationStr = getJSONObject(sphereDataStr, "\"end_location\"");
+        newSphere.endLocation = {getFloat(locationStr, "\"x\""),
         getFloat(locationStr, "\"y\""),
         getFloat(locationStr, "\"z\"")};
 
@@ -95,8 +101,9 @@ vector<Sphere> Sphere::parseSphereDataFromJson() {
 
         newSphere.ior = getFloat(materialStr, "\"ior\"");
 
+        //Parse texture file
         newSphere.texture = getString(materialStr, "\"texture\"");
-        if (newSphere.texture != ""){
+        if (newSphere.texture != "" && config.textures){
             newSphere.hasTex = true;
             cout << "Sphere " << i << " texture: " << newSphere.texture << "\n";
         }
@@ -108,10 +115,18 @@ vector<Sphere> Sphere::parseSphereDataFromJson() {
 }
 
 
-bool Sphere::intersect(const Ray& ray, HitStructure& hs){
+bool Sphere::intersect(const Ray& ray, HitStructure& hs, Config config){
+
+    vector<float> location;
+    if (config.motionBlur){
+        location = this->positionAt(ray.time);
+    }
+    else{
+        location = startLocation;
+    }
     
     //Vector from ray origin to sphere centre
-    float l[3] = {location[0] - ray.origin[0], location[1] - ray.origin[1], location[2] - ray.origin[2]};
+    vector<float> l = {location[0] - ray.origin[0], location[1] - ray.origin[1], location[2] - ray.origin[2]};
     //Get t closest approach - dot product gives amount of projection of L onto ray's direction vector
     float tca = l[0] * ray.direction[0] + l[1] * ray.direction[1] + l[2] * ray.direction[2];
     
@@ -154,13 +169,22 @@ bool Sphere::intersect(const Ray& ray, HitStructure& hs){
     hs.shininess = shininess;
     hs.transparency = transparency;
     hs.ior = ior;
-
+    if (ray.time){
+        hs.time = ray.time;
+    }
     return true;
 }
 
 //Get AABB of the sphere
 AABB Sphere::getAABB() const {
-    vector<float> min = {location[0] - radius, location[1] - radius, location[2] - radius};
-    vector<float> max = {location[0] + radius, location[1] + radius, location[2] + radius};
-    return AABB(min, max);
+    vector<float> startMin = {startLocation[0] - radius, startLocation[1] - radius, startLocation[2] - radius};
+    vector<float> startMax = {startLocation[0] + radius, startLocation[1] + radius, startLocation[2] + radius};
+    AABB start(startMin, startMax);
+
+    vector<float> endMin = {endLocation[0] - radius, endLocation[1] - radius, endLocation[2] - radius};
+    vector<float> endMax = {endLocation[0] + radius, endLocation[1] + radius, endLocation[2] + radius};
+    AABB end(endMin, endMax);
+
+    AABB fullAABB = AABB::unionOf(start, end);
+    return fullAABB;
 }

@@ -3,6 +3,7 @@
 #include "cube.h"
 #include "sphere.h"
 #include "ray.h"
+#include "config.h"
 #include <vector>
 #include <cmath>
 
@@ -62,7 +63,7 @@ bool AABB::intersect(const Ray& ray, float& tMin, float& tMax) const {
 }
 
 //Gets AABBs of each shape in the scene
-AABB AABB::fromPoints(const vector<Plane> planes, const vector<Cube> cubes, const vector<Sphere> spheres) {
+AABB AABB::fromPoints(const vector<Plane> planes, const vector<Cube> cubes, const vector<Sphere> spheres, Config config) {
     vector<float> minPoint = {numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max()};
     vector<float> maxPoint = {numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min()};
 
@@ -78,8 +79,11 @@ AABB AABB::fromPoints(const vector<Plane> planes, const vector<Cube> cubes, cons
         }
     }
 
+
     for (const auto& cube : cubes) {
-        AABB aabb = cube.getAABB();
+        
+        AABB aabb = cube.getAABB(config.motionBlur);
+            
         for (int i = 0; i < 3; i++) {
             if (aabb.min[i] < minPoint[i]) {
                 minPoint[i] = aabb.min[i];

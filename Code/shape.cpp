@@ -5,6 +5,7 @@
 #include <cmath>
 #include <vector>
 #include "shape.h"
+#include "raytracer.h"
 
 using namespace std;
 
@@ -28,7 +29,7 @@ float Shape::getFloat(const string& str, const string& key) {
     }
 
     size_t end = start;
-    while (end < str.length() && isdigit(str[end]) || str[end] == '.' || str[end] == '-') {
+    while (end < str.length() && isdigit(str[end]) || str[end] == '.' || str[end] == '-' || str[end] == 'e') {
         end++;
     }
 
@@ -131,4 +132,13 @@ string Shape::getJSONArray(const string& str, const string& key) {
     }
 
     return str.substr(start, end - start);
+}
+
+//Get linear interpolation of shape position for motion blur
+vector<float> Shape::positionAt(float time){
+    return {
+        Raytracer::lerp(startLocation[0], endLocation[0], time),
+        Raytracer::lerp(startLocation[1], endLocation[1], time),
+        Raytracer::lerp(startLocation[2], endLocation[2], time)
+    };
 }

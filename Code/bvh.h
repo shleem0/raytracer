@@ -7,6 +7,7 @@
 #include "plane.h"
 #include "cube.h"
 #include "sphere.h"
+#include "config.h"
 
 //Class for a single node in the bounding volume hierarchy
 class BVHNode {
@@ -29,10 +30,10 @@ public:
     ~BVHNode();
 
     //Traversing the BVH for ray intersection
-    bool intersect(Ray& ray, float& tMin, float& tMax);
+    bool intersect(Ray& ray, float& tMin, float& tMax, Config config);
 
     //Build the BVH
-    static BVHNode* buildBVH(const vector<Plane> planes, const vector<Cube> cubes, const vector<Sphere> spheres, int maxDepth = 8);
+    static BVHNode* buildBVH(const vector<Plane> planes, const vector<Cube> cubes, const vector<Sphere> spheres, Config config, int maxDepth = 8);
 };
 
 #endif 

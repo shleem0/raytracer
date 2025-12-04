@@ -17,7 +17,7 @@ struct HitStructure{
     float shininess;
     float transparency;
     float ior;
-    string objectType;
+    float time;
 
     float u, v;
     bool hasTex = false;

@@ -4,6 +4,7 @@
 #include "ray.h"
 #include "hit_struct.h"
 #include "image.h"
+#include "config.h"
 #include <vector>
 #include <string>
 
@@ -12,7 +13,8 @@ using namespace std;
 //Superclass to represent a generic shape in a Blender scene
 class Shape{
     public:
-        vector<float> location;
+        vector<float> startLocation;
+        vector<float> endLocation;
         vector<float> diffuse;
         vector<float> specular;
         float shininess;
@@ -32,8 +34,12 @@ class Shape{
         //Parse an array from a JSON object
         static string getJSONArray(const string&, const string&);
 
+        vector<float> positionAt(float);
+
         //Abstract ray intersection class implemented by each shape
-        virtual bool intersect(const Ray&, HitStructure&) = 0;
+        virtual bool intersect(const Ray&, HitStructure&, Config) = 0;
+
+        virtual ~Shape() {}
 };
 
 #endif

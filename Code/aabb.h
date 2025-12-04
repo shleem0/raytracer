@@ -2,6 +2,7 @@
 #define AABB_H
 
 #include <vector>
+#include "config.h"
 
 using namespace std;
 
@@ -28,7 +29,7 @@ class AABB{
         bool intersect(const Ray&, float&, float&) const;
 
         //Calculate the AABB for all shapes in the scene
-        static AABB fromPoints(const vector<Plane>, const vector<Cube>, const vector<Sphere>);
+        static AABB fromPoints(const vector<Plane>, const vector<Cube>, const vector<Sphere>, Config);
 
         //Calculate the AABB for a list of points
         static AABB fromPoints(const vector<vector<float>>);

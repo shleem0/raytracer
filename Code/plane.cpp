@@ -13,10 +13,11 @@
 #include "hit_struct.h"
 #include "raytracer.h"
 #include "image.h"
+#include "config.h"
 
 using namespace std;
 
-vector<Plane> Plane::parsePlaneDataFromJson() {
+vector<Plane> Plane::parsePlaneDataFromJson(Config config) {
     //Open JSON file
     ifstream jsonFile("..\\ASCII\\scene.json");
     if (!jsonFile) {
@@ -124,8 +125,10 @@ vector<Plane> Plane::parsePlaneDataFromJson() {
 
         newPlane.ior = getFloat(materialStr, "\"ior\"");
 
+
+        //Get texture file
         newPlane.texture = getString(materialStr, "\"texture\"");
-        if (newPlane.texture != ""){
+        if (newPlane.texture != "" && config.textures){
             newPlane.hasTex = true;
             cout << "Plane " << i << " texture: " << newPlane.texture << "\n";
         }
@@ -136,7 +139,8 @@ vector<Plane> Plane::parsePlaneDataFromJson() {
     return planes;
 }
 
-bool Plane::intersect(const Ray& ray, HitStructure& hs){
+//Checks if a ray intersects with the plane
+bool Plane::intersect(const Ray& ray, HitStructure& hs, Config config){
     float denominator = normal[0]*ray.direction[0] + normal[1]*ray.direction[1] + normal[2]*ray.direction[2];
     if (abs(denominator) < 1e-10){ 
         return false; //Ray is parallel to plane
@@ -188,6 +192,9 @@ bool Plane::intersect(const Ray& ray, HitStructure& hs){
         hs.shininess = shininess;
         hs.transparency = transparency;
         hs.ior = ior;
+        if (ray.time){
+            hs.time = ray.time;
+        }
     }
 
     //True if ray intersects with the plane's axis, and intersection point is within its bounds

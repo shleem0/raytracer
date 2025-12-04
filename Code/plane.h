@@ -5,6 +5,7 @@
 #include "ray.h"
 #include "hit_struct.h"
 #include "aabb.h"
+#include "config.h"
 #include <vector>
 #include <string>
 
@@ -17,10 +18,10 @@ class Plane : public Shape{
         vector<float> normal;
 
         //Parse all plane data from the scene's JSON
-        static vector<Plane> parsePlaneDataFromJson();
+        static vector<Plane> parsePlaneDataFromJson(Config);
 
         //Check if a ray intersects with the plane
-        bool intersect(const Ray&, HitStructure&) override;
+        bool intersect(const Ray&, HitStructure&, Config) override;
 
         //Check if a 2D point is within the plane's bounds (as a 2D polygon)
         bool pointInsidePolygon(const vector<float>&);

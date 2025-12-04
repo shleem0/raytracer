@@ -12,7 +12,7 @@ Image::Image(const string& fileName){
 
 void Image::readImage() {
 
-    ifstream fileStream("../Textures/" + file);
+    ifstream fileStream("../Textures/" + file, ios::binary);
 
     if (!fileStream.is_open()) {
         throw runtime_error("Failed to open the image file");
@@ -30,16 +30,35 @@ void Image::readImage() {
     //Adjust pixel colour array to size of image
     pixelValues.resize(height, vector<vector<int>>(width, vector<int>(3)));
 
-    //Store each pixel's colour
-    int value;
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            for (int color = 0; color < 3; ++color) {
-                fileStream >> value;
-                if (fileStream.fail()) {
-                    throw runtime_error("Invalid pixel values");
+    if (header == "P3"){
+        //ASCII PPM
+        //Store each pixel's colour
+        int value;
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                for (int color = 0; color < 3; ++color) {
+                    fileStream >> value;
+                    if (fileStream.fail()) {
+                        throw runtime_error("Invalid pixel values");
+                    }
+                    pixelValues[y][x][color] = value;
                 }
-                pixelValues[y][x][color] = value;
+            }
+        }
+    }
+
+    else{
+        // Binary PPM
+        char r, g, b;
+        for (int y = 0; y < height; ++y){
+            for (int x = 0; x < width; ++x) {
+                fileStream.read(&r, 1);
+                fileStream.read(&g, 1);
+                fileStream.read(&b, 1);
+                if (fileStream.fail()) throw runtime_error("Invalid pixel values");
+                pixelValues[y][x][0] = static_cast<unsigned char>(r);
+                pixelValues[y][x][1] = static_cast<unsigned char>(g);
+                pixelValues[y][x][2] = static_cast<unsigned char>(b);
             }
         }
     }
@@ -47,6 +66,7 @@ void Image::readImage() {
     fileStream.close();
 }
 
+//Adjust specific pixel colour
 void Image::modifyPixel(int x, int y, int red, int green, int blue) {
 
     if (x < 0 || x >= width || y < 0 || y >= height) {
@@ -59,7 +79,7 @@ void Image::modifyPixel(int x, int y, int red, int green, int blue) {
 }
 
 
-
+//Write image to file
 void Image::writeImage(const string& outputFileName) {
     ofstream fileStream("../Output/" + outputFileName);
 

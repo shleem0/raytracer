@@ -10,5 +10,6 @@ class Ray{
         vector<float> origin;
         vector<float> direction;
         vector<HitStructure> hs;
+        float time = 0.0f;
 };
 #endif

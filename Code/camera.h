@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "ray.h"
+#include "config.h"
 
 using namespace std;
 
@@ -12,14 +13,16 @@ class Camera{
     public:
         vector<float> location;
         vector<float> gaze_vector;
+        float aperture;
         float focal_length;
+        float focal_distance;
         float sensor_width;
         float sensor_height;
         float res_x;
         float res_y;
 
         //Parses camera data from the scene's JSON into the object
-        static vector<Camera> parseCameraDataFromJson();
+        static vector<Camera> parseCameraDataFromJson(Config);
 
         //Converts a given pixel (x,y) to a ray
         Ray convertPixelToRay(float, float) const;
@@ -32,5 +35,8 @@ class Camera{
 
         //Extract an array from a JSON object
         static string getJSONArray(const string&, const string&);
+
+        //Samples from uniform disk
+        static void sampleDisk(float&, float&);
 };
 #endif

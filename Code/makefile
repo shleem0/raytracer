@@ -3,7 +3,7 @@ CXX = g++
 TARGET = raytracer
 TARGET_DEL = raytracer.exe
 
-SRCS = camera.cpp image.cpp shape.cpp sphere.cpp cube.cpp plane.cpp pointlight.cpp aabb.cpp bvh.cpp raytracer.cpp
+SRCS = camera.cpp image.cpp shape.cpp sphere.cpp cube.cpp plane.cpp pointlight.cpp aabb.cpp bvh.cpp config.cpp raytracer.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 # Default rule to build and run the executable

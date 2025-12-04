@@ -8,4 +8,14 @@ Ray intersection - implemented ray intersection checker for each shape type, ens
 
 Acceleration - implemented a bounding volume hierarchy structure using axis-aligned bounded boxes for each shape to speed up the ray-tracing processes
 
-Whitted-style Raytracing - for each pixel in the camera's image plane, a ray is traced into the scene. The ray's intersection with scene shapes is tested, then shaded appropriately via Blinn-Phong. A refracted and reflected ray are traced from this point, with their contributions adding to the final colour.
+Whitted-style Raytracing - for each pixel in the camera's image plane, a ray is traced into the scene. The ray's intersection with scene shapes is tested, then shaded appropriately via Blinn-Phong. Refracted and reflected rays are traced recursively, with their contributions adding to the final pixel colour.
+
+Anti-alisaing - for each pixel, a chosen number of random samples (via Monte Carlo sampling) are taken from within the pixel and averaged to calculate the pixel colour
+
+Textures - Hit point (u, v) on the intersected shape's texture is calculated and then sampled from to give the base/diffuse colour of the intersected point (x, y)
+
+System integration - separated main raytracer into smaller modules to increase modularity, and turned regularly used processes into helper functions to decrease code repetition. Command line arguments were added to turn on/off features e.g. anti-aliasing, texture mapping, depth of field, reflections, glossy reflections, soft shadows and motion blur.
+
+Distributed raytracing effects - included soft shadows and glossy reflection using Monte Carlo distributed raytracing
+
+Lens effects - implemented depth of field using Blender camera focal distance and aperture, and motion blur by interpolating object position between timestamps 0 and 1, giving each ray a time and averaging to get blurry colour across motion 
