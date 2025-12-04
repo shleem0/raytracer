@@ -60,14 +60,13 @@ int main(int argc, char* argv[]){
 
     int totalObjects = spheres.size() + cubes.size() + planes.size();
 
-    Ray ray;
-
     Image img("blank_1920x1080.ppm");
     img.readImage();
 
     cout << "\n---Raytracing for " << totalObjects <<" object(s)---\n";
 
     BVHNode* bvh;
+    Ray ray;
 
     //Build BVH
     if (config.bvh){
@@ -166,8 +165,6 @@ int main(int argc, char* argv[]){
                     }
                 }
             }
-
-            
     
 
             //Average the colour for AA
@@ -187,6 +184,7 @@ int main(int argc, char* argv[]){
                 cout << percentDone << "% done\n";
 
             }
+
         }
     }
 
@@ -194,7 +192,7 @@ int main(int argc, char* argv[]){
     uint64_t end = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     cout << "Finished! Time taken: " << (end - start) / 1000.0f << "s\n";
 
-    img.writeImage("output.ppm");
+    img.writeImage(config.outputFile);
     if (bvh) delete bvh;
 
     return 0;
@@ -310,6 +308,7 @@ vector<float> Raytracer::blinnPhong(Config config, BVHNode* bvh, HitStructure& h
     //Ambient colour
     vector<float> colour = {ka * matColour[0], ka * matColour[1], ka * matColour[2]};
 
+
     for (const auto& light : lights){
 
         //Get vector to each light from the hit point
@@ -363,6 +362,7 @@ vector<float> Raytracer::reflectRefract(Config config, BVHNode* bvh, Ray& ray, c
     }
 
     HitStructure hs = ray.hs.back();
+
     vector<float> colour = blinnPhong(config, bvh, hs, cam, lights, planes, cubes, spheres);
 
     //Stop reflection/refraction at max depth
@@ -388,7 +388,6 @@ vector<float> Raytracer::reflectRefract(Config config, BVHNode* bvh, Ray& ray, c
         //Flip normal so N faces opposite to ray.direction
         N = {-N[0], -N[1], -N[2]};
     }
-
 
     //Reflection
     vector<float> sampleColour;

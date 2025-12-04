@@ -159,7 +159,6 @@ bool Plane::intersect(const Ray& ray, HitStructure& hs, Config config){
     bool inPolygon = pointInsidePolygon(intersectPoint);
 
     if (inPolygon){
-
         //Get hit point on texture for texture mapping
         if (hasTex){
             vector<float> uSide = Raytracer::sub_vec(vertices[1], vertices[0]);
@@ -185,8 +184,8 @@ bool Plane::intersect(const Ray& ray, HitStructure& hs, Config config){
         }
 
         hs.hitPoint = intersectPoint;
-        hs.rayDistance = sqrt(pow(ray.origin[0] - intersectPoint[0], 2) + pow(ray.origin[1] - intersectPoint[1], 2) + pow(ray.origin[2] - intersectPoint[2], 2 ));
         hs.normal = normal;
+        hs.rayDistance = t;//sqrt(pow(intersectPoint[0] - ray.origin[0], 2) + pow(intersectPoint[1] - ray.origin[1], 2) + pow(intersectPoint[2] - ray.origin[2], 2));
         hs.diffuse = {diffuse[0], diffuse[1], diffuse[2]};
         hs.specular = {specular[0], specular[1], specular[2]};
         hs.shininess = shininess;

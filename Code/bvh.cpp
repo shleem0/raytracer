@@ -76,7 +76,6 @@ bool BVHNode::intersect(Ray& ray, float& tMin, float& tMax, Config config){
             }
         }
 
-
         for (auto cube : cubes) {
             HitStructure hs;
             if (cube.intersect(ray, hs, config) && hs.rayDistance >= 0.0f && hs.rayDistance < closestDist) {
@@ -146,7 +145,7 @@ BVHNode* BVHNode::buildBVH(const vector<Plane> planes, const vector<Cube> cubes,
         }
     }
     for (const auto& cube : cubes) {
-        if ((cube.getAABB(config.motionBlur).min[axis] + cube.getAABB(config.motionBlur).max[axis]) / 2.0f < splitPoint) {
+        if ((cube.getAABB().min[axis] + cube.getAABB().max[axis]) / 2.0f < splitPoint) {
             leftCubes.push_back(cube);
         } else {
             rightCubes.push_back(cube);

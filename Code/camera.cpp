@@ -80,6 +80,7 @@ vector<Camera> Camera::parseCameraDataFromJson(Config config) {
         //Parse camera aperture
         if (config.dof){
             newCam.aperture = getFloat(cameraDataStr, "\"aperture\"");
+            newCam.focal_distance = getFloat(cameraDataStr, "\"focal_distance\"");
         }
         else{
             newCam.aperture = 0.0f;
@@ -87,7 +88,6 @@ vector<Camera> Camera::parseCameraDataFromJson(Config config) {
 
         //Parse focal length
         newCam.focal_length = getFloat(cameraDataStr, "\"focal_length\"") / 1000.0f;
-        newCam.focal_distance = getFloat(cameraDataStr, "\"focal_distance\"");
 
         //Parse sensor width and height
         string sensorStr = getJSONObject(cameraDataStr, "\"sensor\"");

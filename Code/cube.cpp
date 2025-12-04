@@ -169,8 +169,7 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs, Config config){
         }
     }
 
-    const float T_EPS = 1e-5f;
-
+    const float T_EPS = 1e-4f;
     float t = -1.0f;
     if (tmin > T_EPS)       t = tmin;
     else if (tmax > T_EPS)  t = tmax;
@@ -272,8 +271,8 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs, Config config){
 
     float worldT = Raytracer::dotProd(vecToHit, ray.direction);
 
-    const float WORLD_T_EPS = 1e-6f;
-    if (worldT < WORLD_T_EPS) worldT = WORLD_T_EPS;
+    const float WORLD_T_EPS = 1e-4f;
+    worldT = max(worldT, WORLD_T_EPS);
 
     rotateXYZ(normalLocal, rotation);
     normalLocal = Raytracer::normalise(normalLocal);
@@ -287,9 +286,7 @@ bool Cube::intersect(const Ray& ray, HitStructure& hs, Config config){
     hs.shininess = shininess;
     hs.transparency = transparency;
     hs.ior = ior;
-    if (ray.time){
-        hs.time = ray.time;
-    }
+    hs.time = ray.time;
 
     return true;
 }
@@ -317,7 +314,7 @@ void Cube::rotateXYZ(vector<float>& v, const vector<float>& rot) const{
     float x3 = x * cz - y * sz;
     float y3 = x * sz + y * cz;
 
-    v[0] = x3; v[1] = y3; v[2] = z2;
+    v[0] = x3; v[1] = y3; v[2] = z;
 }
 
 void Cube::rotateXYZInverse(vector<float>& v, const vector<float>& rot) const{
@@ -354,7 +351,7 @@ void Cube::rotateXYZInverse(vector<float>& v, const vector<float>& rot) const{
 }
 
 
-AABB Cube::getAABB(bool motionBlur) const {
+AABB Cube::getAABB() const {
 
     vector<float> startMin = {startLocation[0] - scale, startLocation[1] - scale, startLocation[2] - scale};
     vector<float> startMax = {startLocation[0] + scale, startLocation[1] + scale, startLocation[2] + scale};
@@ -362,6 +359,28 @@ AABB Cube::getAABB(bool motionBlur) const {
     vector<float> endMin = {endLocation[0] - scale, endLocation[1] - scale, endLocation[2] - scale};
     vector<float> endMax = {endLocation[0] + scale, endLocation[1] + scale, endLocation[2] + scale};
 
-    AABB fullAABB = AABB::unionOf(AABB(startMin, startMax), AABB(endMin, endMax));
+    vector<vector<float>> corners;
+    for (float x : {-1.0f, 1.0f})
+    for (float y : {-1.0f, 1.0f})
+    for (float z : {-1.0f, 1.0f}) {
+
+        // Local corner
+        vector<float> c = {x, y, z};
+        
+        vector<float> startC = c;
+        rotateXYZ(startC, rotation);
+        startC = Raytracer::mul_vec(startC, scale);
+        startC = Raytracer::add_vec(startC, startLocation);
+        corners.push_back(startC);
+
+        vector<float> endC = c;
+        rotateXYZ(endC, rotation);
+        startC = Raytracer::mul_vec(endC, scale);
+        endC = Raytracer::add_vec(endC, endLocation);
+        corners.push_back(endC);
+    }
+
+    AABB fullAABB = AABB::fromPoints(corners);
+    //AABB fullAABB = AABB::unionOf(AABB(startMin, startMax), AABB(endMin, endMax));
     return fullAABB;
 }

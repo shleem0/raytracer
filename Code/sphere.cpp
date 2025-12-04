@@ -163,15 +163,13 @@ bool Sphere::intersect(const Ray& ray, HitStructure& hs, Config config){
 
     hs.hitPoint = intersectPoint;
     hs.normal = {(intersectPoint[0] - location[0]) / radius, (intersectPoint[1] - location[1]) / radius, (intersectPoint[2] - location[2]) / radius};
-    hs.rayDistance = sqrt(pow(ray.origin[0] - intersectPoint[0], 2) + pow(ray.origin[1] - intersectPoint[1], 2) + pow(ray.origin[2] - intersectPoint[2], 2 ));
+    hs.rayDistance = t;//sqrt(pow(ray.origin[0] - intersectPoint[0], 2) + pow(ray.origin[1] - intersectPoint[1], 2) + pow(ray.origin[2] - intersectPoint[2], 2 ));
     hs.diffuse = {diffuse[0], diffuse[1], diffuse[2]};
     hs.specular = {specular[0], specular[1], specular[2]};
     hs.shininess = shininess;
     hs.transparency = transparency;
     hs.ior = ior;
-    if (ray.time){
-        hs.time = ray.time;
-    }
+    hs.time = ray.time;
     return true;
 }
 

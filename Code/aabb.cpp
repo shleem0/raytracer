@@ -62,10 +62,11 @@ bool AABB::intersect(const Ray& ray, float& tMin, float& tMax) const {
     return tMin <= tMax;
 }
 
+
 //Gets AABBs of each shape in the scene
 AABB AABB::fromPoints(const vector<Plane> planes, const vector<Cube> cubes, const vector<Sphere> spheres, Config config) {
-    vector<float> minPoint = {numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max()};
-    vector<float> maxPoint = {numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min()};
+    vector<float> minPoint = {numeric_limits<float>::infinity(), numeric_limits<float>::infinity(), numeric_limits<float>::infinity()};
+    vector<float> maxPoint = {-numeric_limits<float>::infinity(), -numeric_limits<float>::infinity(), -numeric_limits<float>::infinity()};
 
     for (const auto& plane : planes) {
         AABB aabb = plane.getAABB();
@@ -82,7 +83,7 @@ AABB AABB::fromPoints(const vector<Plane> planes, const vector<Cube> cubes, cons
 
     for (const auto& cube : cubes) {
         
-        AABB aabb = cube.getAABB(config.motionBlur);
+        AABB aabb = cube.getAABB();
             
         for (int i = 0; i < 3; i++) {
             if (aabb.min[i] < minPoint[i]) {
@@ -112,8 +113,8 @@ AABB AABB::fromPoints(const vector<Plane> planes, const vector<Cube> cubes, cons
 
 //Get AABB from sent of points around a shape
 AABB AABB::fromPoints(const vector<vector<float>> points) {
-    vector<float> minPoint = {numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max()};
-    vector<float> maxPoint = {numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min()};
+    vector<float> minPoint = {numeric_limits<float>::infinity(), numeric_limits<float>::infinity(), numeric_limits<float>::infinity()};
+    vector<float> maxPoint = {-numeric_limits<float>::infinity(), -numeric_limits<float>::infinity(), -numeric_limits<float>::infinity()};
 
     for (const auto& point : points) {
         for (int i = 0; i < 3; i++) {
@@ -133,8 +134,8 @@ AABB AABB::fromPoints(const vector<vector<float>> points) {
 //Get the union of two AABBs
 AABB AABB::unionOf(const AABB& a, const AABB& b) {
 
-    vector<float> minPoint = {numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max()};
-    vector<float> maxPoint = {numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min()};
+    vector<float> minPoint = {numeric_limits<float>::infinity(), numeric_limits<float>::infinity(), numeric_limits<float>::infinity()};
+    vector<float> maxPoint = {-numeric_limits<float>::infinity(), -numeric_limits<float>::infinity(), -numeric_limits<float>::infinity()};
 
     for (int i = 0; i < 3; i++) {
         if (a.min[i] < minPoint[i]) {

@@ -1,6 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <string>
 using namespace std;
 
 struct Config {
@@ -24,6 +25,7 @@ struct Config {
     int dofSamples = 16;
     bool motionBlur = false;
     int mbSamples = 16;
+    string outputFile = "output.ppm";
 
     static Config parseArgs(int argc, char* argv[]);
 };

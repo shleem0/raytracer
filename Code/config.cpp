@@ -77,6 +77,11 @@ Config Config::parseArgs(int argc, char* argv[]){
             config.mbSamples = std::stoi(argv[++i]);
         }
 
+        //Output file name
+        else if ((arg == "-o" || arg == "--output") && i + 1 < argc){
+            config.outputFile = argv[++i];
+        }
+
         else {
             std::cerr << "Unknown flag: " << arg << "\n";
         }

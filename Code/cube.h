@@ -26,7 +26,7 @@ class Cube : public Shape{
         void rotateXYZInverse(vector<float>&, const vector<float>&) const;
         void rotateXYZ(vector<float>&, const vector<float>&) const;
 
-        AABB getAABB(bool) const;
+        AABB getAABB() const;
 };
 
 #endif
